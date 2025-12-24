@@ -163,3 +163,26 @@ class MasterUpload(models.Model):
     total_rows = models.IntegerField(default=0)
     created_rows = models.IntegerField(default=0)
     updated_rows = models.IntegerField(default=0)
+
+
+class UserFaceEmbedding(models.Model):
+    """
+    Store pre-computed face embeddings for fast recognition.
+    Each face image gets a 512D vector computed by SFace model.
+    This eliminates the need to run DeepFace.verify() on every attendance scan.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='face_embeddings')
+    image_path = models.CharField(max_length=500, help_text="Relative path to the face image")
+    embedding = models.JSONField(help_text="512D face embedding vector as JSON array")
+    model_name = models.CharField(max_length=50, default="SFace", help_text="DeepFace model used")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ("user", "image_path")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=['user']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - Embedding {self.id}"
