@@ -1,0 +1,206 @@
+{% load static %}
+
+<style>
+    /* Calendar container */
+    .calendar-container {
+    display: grid;
+   grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    height: auto;
+    width: 100%;
+    }
+
+/* 📅 Calendar Header */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.calendar-header button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.calendar-header button:hover {
+  transform: scale(1.2);
+}
+
+/* 🗓️ Weekday Row */
+.weekdays {
+  display: flex;
+  justify-content: space-around;
+  font-weight: 700;
+  color: #f8f9fa;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+/* 📆 Calendar Grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  justify-items: center;
+  width: 1601px;
+}
+
+/* 📅 Day Cells */
+.day-cell {
+  width: 75px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+/* 🔍 Hover Tooltip */
+.day-cell:hover::after {
+  content: attr(data-details);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 🌈 Color Coding */
+.present-day {
+  background: #2ecc71; /* green */
+}
+
+.absent-day {
+  background: #e74c3c; /* red */
+}
+
+.leave-day {
+  background: #f1c40f; /* yellow */
+  color: black;
+}
+
+.holiday-day {
+  background: #3498db; /* blue */
+}
+
+.empty {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 500px) {
+
+
+    .calendar-card {
+        margin-top: 47px;
+        height: max-content;
+        padding: 20px;
+        border-radius: 15px;
+    }
+
+       calendar-header h3 {
+    font-size: 55px;
+    font-weight: 700;
+    margin: 0;
+    }
+
+    .calendar-header button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 104px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+   .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 40px;
+    justify-items: center;
+   }
+
+    .day-name {
+        font-size: 2.85rem  ;
+        padding: 6px 0  ;
+    }
+
+    .calendar-header h3 {
+    font-size: 57px;
+    font-weight: 600;
+    margin: 0;
+}
+    .day-cell {
+        width: 10px;
+        height: 85px;
+        font-size: 52px;
+    }
+  }
+
+</style>
+<div class="calendar-container">
+  <!-- calendar_cells.html -->
+<div class="calendar-grid">
+  <!-- Day Names -->
+  <div class="day-name">Mon</div>
+  <div class="day-name">Tue</div>
+  <div class="day-name">Wed</div>
+  <div class="day-name">Thu</div>
+  <div class="day-name">Fri</div>
+  <div class="day-name">Sat</div>
+  <div class="day-name">Sun</div>
+
+  <!-- Day Cells -->
+  {% for week in weeks %}
+    {% for day in week %}
+      {% if day.day %}
+        {% if day.status == "Present" %}
+          <div class="day-cell present-day{% if day.is_today %} today{% endif %}" data-details="{{ day.details }}">
+            {{ day.day }}
+          </div>
+        {% elif day.status == "Absent" %}
+          <div class="day-cell absent-day{% if day.is_today %} today{% endif %}" data-details="{{ day.details }}">
+            {{ day.day }}
+          </div>
+        {% elif day.status == "Leave" %}
+          <div class="day-cell leave-day{% if day.is_today %} today{% endif %}" data-details="{{ day.details }}">
+            {{ day.day }}
+          </div>
+        {% elif day.status == "Holiday" %}
+          <div class="day-cell holiday-day{% if day.is_today %} today{% endif %}" data-details="{{ day.details }}">
+            {{ day.day }}
+          </div>
+        {% else %}
+          <div class="day-cell empty" data-details="{{ day.details }}">{{ day.day }}</div>
+        {% endif %}
+      {% else %}
+        <div class="day-cell empty"></div>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+</div>
+
+</div>

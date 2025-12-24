@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Face View | AttendEase{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Profile | AttendEase</title>
+    <style>
+        :root {
+            --primary-purple: #6C5CE7;
+            --secondary-purple: #A29BFE;
+            --accent-green: #00B894;
+            --secondary-green: #55EFC4;
+            --cancel-red: #D32F2F;
+            --cancel-red-secondary: #FF5722;
+            --background-light-gray: #F8F9FA;
+            --text-dark: #333;
+            --text-footer: #888;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--background-light-gray);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--text-dark);
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        img {
+            width: 100%;
+            border-radius: 12px;
+        }
+
+        .face-card {
+            flex: 1 1 350px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border: 1px solid #f3f4f6;
+        }
+
+        #Back-btn {
+            width: 100%;
+            background-image: linear-gradient(to right, var(--cancel-red), var(--cancel-red-secondary));
+            border: none;
+            border-radius: 30px;
+            padding: 0.75rem 0;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        #Back-btn:hover { transform: scale(1.03); opacity: 0.9; }
+
+        @media (max-width: 640px) {
+            .face-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div style="max-width: 1200px; margin: 2rem auto; display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
+
+    
+    <div class="face-card">
+        <h2 style="color: #6C5CE7;">Registered Face</h2>
+        {% if old_face %}
+            <img src="{{ old_face }}" alt="Registered Face" style="border: 2px solid #6C5CE7; margin-bottom: 10px;">
+        {% else %}
+            <p style="text-align:center; margin-top:1rem;">No registered face found.</p>
+        {% endif %}
+    </div>
+
+    {% if pending_face %}
+    <div class="face-card">
+        <h2 style="color: orange;">Pending Face</h2>
+        <img src="{{ pending_face }}" alt="Pending Face" style="border: 2px solid orange; margin-top: 1rem;">
+        <p style="text-align:center; font-weight:bold; margin-top:0.5rem; color: orange;">
+            Pending Admin Approval
+        </p>
+    </div>
+    {% endif %}
+
+    <!--   Rejected Face -->
+    {% if rejected_face and not pending_face %}
+    <div class="face-card">
+        <h2 style="color: #D32F2F;">Rejected Face</h2>
+        <img src="{{ rejected_face }}" alt="Rejected Face" style="border: 2px solid #D32F2F; margin-top: 1rem;">
+        <p style="text-align:center; font-weight:bold; margin-top:0.5rem; color: #D32F2F;">
+              Your last face update was rejected.
+        </p>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- 🔙 Back Button -->
+<div style="max-width:400px; margin:2rem auto;">
+    <form action="{% url 'userdash' %}" method="get">
+        <button id="Back-btn">⬅️ Back</button>
+    </form>
+</div>
+
+</body>
+</html>
+{% endblock %}

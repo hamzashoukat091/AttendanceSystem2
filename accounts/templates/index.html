@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AttendEase</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="icon" href="{% static 'logobluenobg.ico' %}">
+    <link href="https://api.fontshare.com/v2/css?f[]=alpino@900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+
+.video {
+    background-color: rgb(255, 255, 255);
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+}
+
+.logo{
+
+  height:70px;
+}
+
+        /* -------------------- General -------------------- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+        }
+
+        nav {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;     
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 25px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: #6C5CE7;
+        }
+
+        /* -------------------- Home Section -------------------- */
+        #home {
+            text-align: center;
+            padding: 100px 20px 60px 20px;
+        }
+
+        #home h1 {
+            font-family: 'Alpino', sans-serif;
+            font-size: 45px;
+            animation: slideTop 1.5s ease forwards;
+            opacity: 0;
+            margin-bottom: 20px;
+        }
+
+        #home p {
+            font-size: 20px;
+            color: #000;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        @keyframes slideTop {
+          0% {
+            opacity: 0;
+            transform: translateY(-100px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* -------------------- Feature Cards Section -------------------- */
+        .features-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .features-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .features-header h2 {
+            font-size: 36px;
+            color: #6C5CE7;
+            margin-bottom: 15px;
+        }
+
+        .features-header p {
+            font-size: 18px;
+            color: #555;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .feature-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            flex: 1 1 300px;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+
+        .icon-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #6C5CE7, #A29BFE);
+            color: #fff;
+            font-size: 28px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #6C5CE7;
+            margin-bottom: 15px;
+        }
+
+        .feature-card p {
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .feature-card ul {
+            list-style: none;
+            margin-bottom: 25px;
+        }
+
+        .feature-card ul li {
+            display: flex;
+            align-items: start;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .feature-card ul li i {
+            color: #00B894;
+            margin-right: 8px;
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+
+        .feature-card button {
+            background: linear-gradient(90deg, #6C5CE7, #A29BFE);
+            color: #fff;
+            font-weight: 600;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card button:hover {
+            opacity: 0.9;
+            box-shadow: 0 6px 20px rgba(108, 92, 231, 0.6);
+        }
+
+         :root {
+            --primary-purple: #6C5CE7;
+            --secondary-purple: #A29BFE;
+            --accent-green: #00B894;
+            --text-dark: #333;
+            --text-gray: #555;
+            --background-light: #f9fafb; /* Adjusted to match user's #f9fafb */
+        }
+
+        /* ========== GENERAL ========== */
+        .section {
+            padding: 4rem 2rem;
+            position: relative;
+        }
+
+        .content {
+            margin: auto;
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            color: var(--primary-purple);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-gray);
+            margin-bottom: 3rem;
+        }
+
+        /* ========== HOW IT WORKS (Vertical Stepper) ========== */
+        .how-it-works-stepper {
+            background-color: var(--background-light);
+            /* Using global section padding */
+        }
+
+        .how-it-works-stepper .section-title {
+            /* Overriding global margin to match user's request */
+            margin-bottom: 50px;
+        }
+
+        /* Stepper container */
+        .steps {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 800px;
+            position: relative;
+        }
+
+        /* Step item */
+.step {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Push text left, icon right */
+    margin-bottom: 50px;
+    position: relative;
+    padding-left: 50px;
+    gap: 20px;
+}
+
+/* Step content (left side) */
+.step-content {
+    max-width: 600px;
+    text-align: left;
+}
+
+/* Step icons (right side Lucide) */
+.step-icon {
+    flex-shrink: 0;
+    font-size: 28px;
+    color: var(--primary-purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* On mobile - stack text above icon */
+@media (max-width: 768px) {
+    .step {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .step-icon {
+        margin-top: 10px;
+        align-self: flex-end;
+    }
+}
+
+        /* Vertical line */
+        .step::before {
+            content: "";
+            position: absolute;
+            left: 23px;
+            top: 35px;
+            width: 2px;
+            height: calc(100% - 10px);
+            background: #e5e7eb;
+        }
+
+        .step:last-child::before {
+            display: none;
+        }
+
+        /* Step marker (circle with number) */
+        .step-marker {
+            width: 40px;
+            height: 40px;
+            background-color: #f3f0ff; /* Light purple */
+            border: 2px solid var(--primary-purple);
+            color: var(--primary-purple);
+            font-weight: 600;
+            font-size: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            position: absolute;
+            left: 0;
+        }
+
+        /* Active step */
+        .step.active .step-marker {
+            background-color: var(--primary-purple);
+            border-color: var(--primary-purple);
+            color: #fff;
+        }
+
+        /* Step content */
+        .step-content {
+            max-width: 650px;
+        }
+
+        .step-content h4 {
+            margin: 0 0 8px;
+            font-size: 18px;
+            color: var(--primary-purple);
+            font-weight: 600;
+        }
+
+        .step-content p {
+            margin: 0;
+            font-size: 15px;
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .step {
+                flex-direction: column;
+                padding-left: 0;
+            }
+
+            .step-marker {
+                position: relative;
+                margin-bottom: 10px;
+                left: auto;
+            }
+
+            .step::before {
+                display: none;
+            }
+        }
+
+        /* ========== DASHBOARD PREVIEW ========== */
+        .dashboard-section {
+            background-color: var(--background-light);
+        }
+
+        .dashboard-mockup {
+            padding: 1rem 0;
+        }
+
+        .dashboard-mockup video {
+            width: 60%;
+            max-width: 900px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: transform 0.5s;
+            display: block; /* Important for alignment */
+            margin: 0 auto;
+        }
+
+        .dashboard-mockup img:hover {
+            transform: scale(1.02);
+        }
+
+        /* ========== TESTIMONIALS ========== */
+        .testimonials-section {
+            background-color: #fff;
+        }
+
+        .testimonial-cards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .testimonial-card {
+            background: var(--background-light);
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            max-width: 350px;
+            flex: 1 1 300px;
+            transition: transform 0.5s, box-shadow 0.5s;
+            text-align: left;
+            position: relative;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            font-size: 1rem;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .testimonial-name {
+            font-weight: 700;
+            color: var(--primary-purple);
+            font-size: 0.95rem;
+            display: block;
+            margin-top: 1rem;
+        }
+        
+        /* Quote icon for style */
+        .testimonial-card::before {
+            content: "❝";
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-size: 3rem;
+            color: var(--secondary-purple);
+            opacity: 0.2;
+            line-height: 1;
+        }
+
+        /* ========== FAQ ========== */
+        .faq-section {
+            background-color: var(--background-light);
+        }
+
+        .faq-items {
+            max-width: 800px;
+            margin: auto;
+            text-align: left;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .faq-item {
+            border-top: 1px solid #eee;
+            background: #fff;
+        }
+
+        .faq-item:first-child {
+            border-top: none;
+        }
+
+        .faq-question {
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--primary-purple);
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question::after {
+            content: '+';
+            font-size: 1.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .faq-question.active::after {
+            content: '-';
+            transform: rotate(0deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            padding: 0 1.5rem;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        }
+        
+        .faq-answer.open {
+            max-height: 200px; /* Adjust as needed for max content */
+            padding-bottom: 1.5rem;
+        }
+
+        .faq-answer p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+
+
+        /* ========== BLUR ANIMATION (Scroll-Triggered) ========== */
+        .blur-animation {
+            filter: blur(5px);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth easing */
+        }
+
+        .blur-animation.visible {
+            filter: blur(0);
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        footer{
+                      text-align: center;
+            font-size: 0.75rem;
+            color: #888;
+            margin: 0;
+        }
+
+      #menu-toggle{
+        display:none;
+      }
+
+    #menu-toggle:checked ~ .menu {
+    display: none;
+  }
+
+  .menu-icon {
+    display: none;
+  }
+
+  @media screen and (max-width: 668px) {
+
+    .logo{
+      height:55px;
+    }
+
+            .dashboard-mockup video {
+            width: 100%;
+            max-width: 900px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: transform 0.5s;
+            display: block; /* Important for alignment */
+            margin: 0 auto;
+        }
+
+    nav ul {
+    position: absolute;
+    top: 70px;
+    left: 0;
+    width: 100%;
+    background: #6C5CE7;
+    flex-direction: column;
+    align-items: center;
+    display: none;
+    padding: 20px 0;
+  }
+
+  nav ul li {
+    margin: 10px 0;
+  }
+
+  #menu-toggle:checked ~ .menu {
+    display: flex;
+  }
+
+  .menu-icon {
+    display: block;
+  }
+}
+        
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+<nav>
+  <img src="{% static 'AttendEase.png' %}" alt="logo" class="logo">
+
+  <!-- Hamburger toggle -->
+  <input type="checkbox" id="menu-toggle">
+  <label for="menu-toggle" class="menu-icon">&#9776;</label>
+
+  <ul class="menu">
+      <li><a class="active" href="{% url 'home' %}">Home</a></li>
+      <li><a href="#abc">About</a></li>
+      {% comment %} <li><a href="#">Attendance</a></li> {% endcomment %}
+      <li><a href="{% url 'admin:index' %}">Administrator</a></li>
+      <li><a href="{% url 'register' %}">Sign Up</a></li>
+      <li><a href="{% url 'userlogin' %}">Sign In</a></li>
+  </ul>
+</nav>
+    <!-- Home Section -->
+    <section id="home">
+        <h1>Smart Attendance Made Simple with Face Scan & AI</h1>
+        <p>Build a smart facial recognition-based attendance system that improves accuracy, ensures security, and minimizes manual effort for schools, colleges, and offices through face-based identity verification and analytics.​</p>
+    </section>
+
+ <div id="load" class="video">
+
+  <video 
+         style="width: 130px; height: auto; border-radius: 10px;" 
+         class="video" 
+         src="{% static 'Untitled video - Made with Clipchamp (2) (online-video-cutter.com).mp4' %}" 
+         autoplay loop muted>
+  </video>
+</div>
+
+{% comment %} <section class="features-section">
+  <div class="features-header">
+    <h2>AI-Powered Features of AttendEase</h2>
+    <p>Built with DeepFace — a state-of-the-art deep learning framework that brings accuracy, emotion analysis, and liveness detection to your attendance system.</p>
+  </div>
+
+  <div class="feature-container">
+
+    <!-- Card 1: DeepFace Recognition -->
+    <div class="feature-card">
+      <div class="icon-circle"><i data-lucide="scan-face"></i></div>
+      <h3>DeepFace Recognition</h3>
+      <p>Leverages DeepFace’s ensemble models (VGG-Face, SFace, ArcFace, and more) for ultra-accurate, real-time identity verification.</p>
+      <ul>
+        <li><i data-lucide="check-circle"></i>99.9% recognition accuracy across lighting conditions.</li>
+        <li><i data-lucide="check-circle"></i>Auto-alignment and preprocessing for face normalization.</li>
+        <li><i data-lucide="check-circle"></i>Multi-model confidence scoring for reliability.</li>
+      </ul>
+    </div>
+
+    <!-- Card 2: Emotion & Liveness Detection -->
+    <div class="feature-card">
+      <div class="icon-circle"><i data-lucide="smile"></i></div>
+      <h3>Emotion & Liveness Detection</h3>
+      <p>Detects facial emotions and prevents spoofing using deep CNN-based liveness verification to ensure genuine check-ins.</p>
+      <ul>
+        <li><i data-lucide="check-circle"></i>Real-time spoof prevention (no static photo check-ins).</li>
+        <li><i data-lucide="check-circle"></i>Emotion classification: happy, neutral, sad, angry, and more.</li>
+        <li><i data-lucide="check-circle"></i>Ideal for classroom and workplace authenticity checks.</li>
+      </ul>
+    </div>
+
+    <!-- Card 3: Smart Analytics & Insights -->
+    <div class="feature-card">
+      <div class="icon-circle"><i data-lucide="bar-chart-3"></i></div>
+      <h3>Smart Attendance Analytics</h3>
+      <p>Visualize attendance trends, punctuality stats, and daily activity — all powered by AI-backed insights for smarter decision-making.</p>
+      <ul>
+        <li><i data-lucide="check-circle"></i>Auto-generated daily, weekly, and monthly reports.</li>
+        <li><i data-lucide="check-circle"></i>Batch image attendance marking via multi-face detection.</li>
+        <li><i data-lucide="check-circle"></i>Downloadable reports in CSV or PDF formats.</li>
+      </ul>
+    </div>
+
+    <!-- Card 4: Seamless Integration -->
+    <div class="feature-card">
+      <div class="icon-circle"><i data-lucide="cloud"></i></div>
+      <h3>Seamless Cloud Integration</h3>
+      <p>AttendEase connects with cloud APIs for centralized storage, real-time sync, and secure access — ensuring scalability across multiple branches.</p>
+      <ul>
+        <li><i data-lucide="check-circle"></i>Real-time face sync between users and admin dashboard.</li>
+        <li><i data-lucide="check-circle"></i>Encrypted data handling with privacy compliance.</li>
+        <li><i data-lucide="check-circle"></i>Works both online and offline with auto-sync.</li>
+      </ul>
+    </div>
+
+  </div>
+</section> {% endcomment %}
+<p id="abc"> </p>
+    <!-- Features Section -->
+    <section class="features-section" >
+        <div class="features-header">
+            <h2>Core Features of AttendEase</h2>
+            <p>Streamline your operations with powerful, intelligent tools designed for modern workplaces.</p>
+        </div>
+
+        <div class="feature-container" >
+            <!-- Card 1 -->
+            <div class="feature-card">
+                <div class="icon-circle"><i data-lucide="clock-4"></i></div>
+                <h3>Smart Attendance</h3>
+                <p>Automatic, seamless attendance tracking using modern technology to eliminate manual errors and save valuable time daily.</p>
+                <ul>
+                    <li><i data-lucide="check-circle"></i>Zero-touch check-in/out.</li>
+                    <i data-lucide="check-circle"></i>Easy To Use.</li>
+                    {% comment %} <li><i data-lucide="check-circle"></i>Geofencing support will .</li> {% endcomment %}
+                </ul>
+                {% comment %} <button>Learn More</button> {% endcomment %}
+            </div>
+
+            <!-- Card 2 -->
+            <div class="feature-card">
+                <div class="icon-circle"><i data-lucide="scan-face"></i></div>
+                <h3>AI Face Detection</h3>
+                <p>Real-time, high-accuracy face verification ensures the person clocking in is the correct employee, preventing buddy punching.</p>
+                <ul>
+                    <li><i data-lucide="check-circle"></i>99.9% verification accuracy.</li>
+                    <li><i data-lucide="check-circle"></i>Instant verification speeds.</li>
+                </ul>
+                {% comment %} <button>View Demo</button> {% endcomment %}
+            </div>
+
+            <!-- Card 3 -->
+            <div class="feature-card">
+                <div class="icon-circle"><i data-lucide="line-chart"></i></div>
+                <h3>Real-Time Analytics</h3>
+                <p>Gain instant insights into employee presence, punctuality, and overall workforce productivity with live dashboards.</p>
+                <ul>
+                    <li><i data-lucide="check-circle"></i>Customizable report generation.</li>
+                    <li><i data-lucide="check-circle"></i>Export data in various Excel formats.</li>
+                </ul>
+                {% comment %} <button>See Reports</button> {% endcomment %}
+            </div>
+        </div>
+    </section>
+
+ <section id="how-it-works" class="section blur-animation how-it-works-stepper">
+        <div class="content">
+            <h2 class="section-title">How AttendEase Works</h2>
+            <!-- Removed subtitle to match user's provided HTML -->
+
+            <ol class="steps">  
+    <!-- Step 1 -->
+    <li class="step active">
+        <div class="step-marker">1</div>
+        <div class="step-content">
+            <h4>Face Scan</h4>
+            <p>Using AI-powered face detection, the system captures the user’s face in real-time.</p>
+        </div>
+        <div class="step-icon">
+            <i data-lucide="camera"></i>
+        </div>
+    </li>
+
+    <!-- Step 2 -->
+    <li class="step">
+        <div class="step-marker">2</div>
+        <div class="step-content">
+            <h4>Verification</h4>
+            <p>The system verifies the captured face against stored records to confirm identity and prevent spoofing.</p>
+        </div>
+        <div class="step-icon">
+            <i data-lucide="shield-check"></i>
+        </div>
+    </li>
+
+    <!-- Step 3 -->
+    <li class="step">
+        <div class="step-marker">3</div>
+        <div class="step-content">
+            <h4>Attendance Marked</h4>
+            <p>Once verified, the system automatically marks attendance and updates the records instantly.</p>
+        </div>
+        <div class="step-icon">
+            <i data-lucide="check-circle"></i>
+        </div>
+    </li>
+
+    <!-- Step 4 -->
+    <li class="step">
+        <div class="step-marker">4</div>
+        <div class="step-content">
+            <h4>Dashboard & Reports</h4>
+            <p>Attendance data is visualized in a modern dashboard with analytics, export options, and real-time insights.</p>
+        </div>
+        <div class="step-icon">
+            <i data-lucide="bar-chart-3"></i>
+        </div>
+    </li>
+</ol>
+        </div>
+    </section>
+
+    <!-- ================= DASHBOARD PREVIEW SECTION ================= -->
+    <section id="dashboard-preview" class="section dashboard-section blur-animation">
+        <div class="content">
+            <h2 class="section-title">Dashboard Preview</h2>
+            <p class="section-subtitle">Gain instant insights with a clean, modern dashboard UI designed for clarity.</p>
+            <div class="dashboard-mockup">
+                <!-- IMPORTANT: Replace this placeholder with an actual image of your dashboard -->
+               <video src="{% static 'mockup.mp4' %}" autoplay loop muted playsinline>
+                {% comment %} <img src="https://placehold.co/900x500/A29BFE/ffffff?text=AttendEase+Dashboard+Mockup" alt="AttendEase Dashboard Preview"> {% endcomment %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= TESTIMONIALS SECTION ================= -->
+    <section id="testimonials" class="section testimonials-section blur-animation">
+        <div class="content">
+            <h2 class="section-title">What Users Say</h2>
+            <p class="section-subtitle">Trusted by students, teachers, and HR professionals worldwide for reliability.</p>
+
+            <div class="testimonial-cards">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"AttendEase has transformed how we manage attendance. It's fast, incredibly accurate, and the setup was seamless. A massive time-saver for our HR team!"</p>
+                    <h4 class="testimonial-name">— Renuka P Patel, Faculty of AMPICS</h4>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"No more manual check-ins or long queues. Our students love the face scan feature—it's quick and reliable. It’s truly smart attendance!"</p>
+                    <h4 class="testimonial-name">— Sarah Lee, School Administrator</h4>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-text">"The AI verification is incredibly precise, preventing fraud, and the real-time reports are invaluable for tracking class presence."</p>
+                    <h4 class="testimonial-name">— Mark Taylor, College Professor</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= FAQ SECTION ================= -->
+    <section id="faq" class="section faq-section blur-animation">
+        <div class="content">
+            <h2 class="section-title">Frequently Asked Questions</h2>
+            <p class="section-subtitle">Answers to common questions about AttendEase and its AI technology.</p>
+
+            <div class="faq-items">
+                <div class="faq-item">
+                    <button class="faq-question" data-toggle="answer-1">Is face recognition safe to use?</button>
+                    <div class="faq-answer" id="answer-1">
+                        <p>Yes, security is our top priority. AttendEase uses encrypted AI algorithms (SFace) and all biometric data is handled securely and in compliance with modern privacy standards. Data is never stored publicly.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" data-toggle="answer-2">Can multiple users scan at the same time?</button>
+                    <div class="faq-answer" id="answer-2">
+                        <p>The system is optimized for speed and can handle rapid sequential scans, making it efficient for high-traffic environments like School/Collage entrances and office lobbies. Batch processing is supported.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" data-toggle="answer-3">Does it work offline?</button>
+                    <div class="faq-answer" id="answer-3">
+                        <p>No, AttendEase currently does not have an offline mode. Attendance data is securely cached locally due to an internet connection being required and automatically syncs to the central database once the connection is restored.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" data-toggle="answer-4">How accurate is the AI verification?</button>
+                    <div class="faq-answer" id="answer-4">
+                        <p>Our core verification model achieves a high degree of accuracy, typically over 99.9%, As we are using the Deepface Library for face recognition, we have a high degree of accuracy in verifying the identity of the person in the image.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        <footer>
+        Powered by AI & OpenCV
+    </footer>
+
+<button id="chat-toggle" style="
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background-color: #6C5CE7;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    z-index: 1000;
+">💬</button>
+
+<!-- Chat Window -->
+<div id="chat-container" style="
+    display: none;
+    position: fixed;
+    bottom: 100px;
+    right: 25px;
+    width: 350px;
+    max-height: 500px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+">
+    <div style="background-color:#6C5CE7; color:white; padding:10px; font-weight:bold;">
+        AttendEase Chatbot
+        <span id="chat-close" style="float:right; cursor:pointer;">✖</span>
+    </div>
+    <div id="chat-box" style="flex:1; padding:10px; overflow-y:auto; background:#f8f8f8;"></div>
+    <div style="padding:10px; display:flex; gap:5px;">
+        <input type="text" id="chat-question" placeholder="Ask something..." style="flex:1; padding:8px; border-radius:5px; border:1px solid #ccc;">
+        <button onclick="sendMessage()" style="background:#6C5CE7; color:white; border:none; border-radius:5px; padding:8px 12px; cursor:pointer;">Send</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Toggle chat visibility
+    const chatToggle = document.getElementById('chat-toggle');
+    const chatContainer = document.getElementById('chat-container');
+    const chatClose = document.getElementById('chat-close');
+
+    chatToggle.addEventListener('click', () => {
+        chatContainer.style.display = 'flex';
+    });
+
+    chatClose.addEventListener('click', () => {
+        chatContainer.style.display = 'none';
+    });
+
+    // CSRF token helper
+    function getCSRFToken() {
+        const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+        return cookieValue;
+    }
+
+    // Send message function
+    window.sendMessage = async function() {
+        const inputEl = document.getElementById("chat-question");
+        if (!inputEl) return console.error("chat-question input not found");
+        const question = inputEl.value.trim();
+        if (!question) return;
+
+        const chatBox = document.getElementById("chat-box");
+        chatBox.innerHTML += `<p><b>You:</b> ${question}</p>`;
+        inputEl.value = "";
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            const response = await fetch("{% url 'chatbot_api' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ question })
+            });
+            const data = await response.json();
+
+            if (data.answer) {
+                chatBox.innerHTML += `<p><b>Bot:</b> ${data.answer}</p>`;
+            } else if (data.error) {
+                chatBox.innerHTML += `<p style="color:red"><b>Error:</b> ${data.error}</p>`;
+            }
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        } catch (err) {
+            chatBox.innerHTML += `<p style="color:red"><b>Error:</b> ${err}</p>`;
+        }
+    }
+
+});
+
+
+        // ================= FAQ TOGGLE (Accordion) =================
+        const faqQuestions = document.querySelectorAll('.faq-question');
+        faqQuestions.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const answerId = btn.getAttribute('data-toggle');
+                const answer = document.getElementById(answerId);
+                
+                // Close other open answers
+                faqQuestions.forEach(otherBtn => {
+                    const otherAnswerId = otherBtn.getAttribute('data-toggle');
+                    const otherAnswer = document.getElementById(otherAnswerId);
+                    
+                    if (otherAnswer !== answer && otherAnswer.classList.contains('open')) {
+                        otherAnswer.classList.remove('open');
+                        otherBtn.classList.remove('active');
+                    }
+                });
+
+                // Toggle current answer
+                answer.classList.toggle('open');
+                btn.classList.toggle('active');
+            });
+        });
+
+        const scrollElements = document.querySelectorAll('.blur-animation');
+
+        const elementInView = (el, offset = 0) => {
+            const elementTop = el.getBoundingClientRect().top;
+            return elementTop <= (window.innerHeight - offset);
+        };
+
+        const displayScrollElement = (element) => {
+            element.classList.add('visible');
+        };
+
+        const handleScrollAnimation = () => {
+            scrollElements.forEach(el => {
+                if (elementInView(el, 150)) {
+                    displayScrollElement(el);
+                }
+            });
+        };
+
+        // Run on scroll and once on load (to catch elements already in view)
+        window.addEventListener('scroll', handleScrollAnimation);
+        window.addEventListener('load', handleScrollAnimation);
+
+
+        lucide.createIcons();
+
+        window.onload = function(){
+            setTimeout(() => {
+                document.getElementById('load').style.display = 'none';
+            }, 2000);
+        }
+    </script>
+
+</body>
+</html>

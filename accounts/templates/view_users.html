@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registered Users</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .search-box {
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            font-weight: bold;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .status-badge.complete {
+            background: #43e97b;
+            color: white;
+        }
+        
+        .status-badge.partial {
+            background: #feca57;
+            color: #333;
+        }
+        
+        .status-badge.none {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .no-users {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card p {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'home' %}" class="back-btn">← Back to Home</a>
+        
+        <h1>{{ title }}</h1>
+        
+        {% if users %}
+        <div class="stats">
+            <div class="stat-card">
+                <h3>{{ users|length }}</h3>
+                <p>Total Users</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ users|length|add:"-1" }}</h3>
+                <p>With Face Data</p>
+            </div>
+            <div class="stat-card">
+                <h3>1</h3>
+                <p>Pending Registration</p>
+            </div>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search by name, email, or API ID...">
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>API ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Face Images</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="userTable">
+                {% for user in users %}
+                <tr data-search="{{ user.username|lower }} {{ user.email|lower }} {{ user.api_user_id }}">
+                    <td>{{ user.api_user_id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.face_images_count }}</td>
+                    <td>
+                        {% if user.face_images_count >= 25 %}
+                            <span class="status-badge complete">✓ Complete</span>
+                        {% elif user.face_images_count > 0 %}
+                            <span class="status-badge partial">Partial</span>
+                        {% else %}
+                            <span class="status-badge none">Not Registered</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-users">
+            <p>No users found. Please sync users from API first.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#userTable tr');
+            
+            rows.forEach(row => {
+                const searchData = row.dataset.search;
+                
+                if (searchData.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

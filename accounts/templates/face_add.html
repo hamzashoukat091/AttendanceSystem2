@@ -1,0 +1,648 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Add / Verify Face | AttendEase{% endblock %}
+{% block content %}
+
+<style>
+:root {
+  --primary-purple: #6C5CE7;
+  --secondary-purple: #A29BFE;
+  --accent-green: #00B894;
+  --secondary-green: #55EFC4;
+  --cancel-red: #D32F2F;
+  --cancel-red-secondary: #FF5722;
+}
+
+/* ====== Base ====== */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #f8f6ff, #ede9fe);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+}
+
+/* ====== Main Card ====== */
+#verification-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(108, 92, 231, 0.2);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 0.4s ease-in;
+  margin: 20px 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ====== Header ====== */
+h1 {
+  color: var(--primary-purple);
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+h2 {
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+hr {
+  width: 100%;
+  border: none;
+  height: 1px;
+  background: #eee;
+  margin: 1rem 0;
+}
+
+/* ====== Camera Canvas ====== */
+#camera-canvas {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background-color: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ====== Status ====== */
+#status-text {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+  min-height: 20px;
+}
+
+/* ====== Buttons ====== */
+.btn-container {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+button {
+  flex: 1;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.9rem;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+#capture-btn {
+  background: linear-gradient(135deg, var(--primary-purple), var(--secondary-purple));
+}
+
+#submit-btn {
+  background: linear-gradient(135deg, var(--accent-green), var(--secondary-green));
+}
+
+#cancel-btn {
+  width: 100%;
+  margin-top: 0.8rem;
+  background: linear-gradient(135deg, var(--cancel-red), var(--cancel-red-secondary));
+}
+
+button:hover:not(:disabled) {
+  transform: scale(1.03);
+  box-shadow: 0 5px 15px rgba(108,92,231,0.25);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ====== Loader ====== */
+.loader {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--primary-purple);
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  animation: spin 0.8s linear infinite;
+  margin-top: 15px;
+  display: none;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ====== Modal Popup ====== */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: #fff;
+  padding: 1.5rem 2rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(108, 92, 231, 0.25);
+  text-align: center;
+  opacity: 0;
+  z-index: 9999;
+  width: 80%;
+  max-width: 300px;
+  transition: all 0.3s ease;
+}
+.modal.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.modal h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+.modal p {
+  font-size: 0.9rem;
+  color: #555;
+}
+.modal.success h3 { color: var(--accent-green); }
+.modal.error h3 { color: var(--cancel-red); }
+
+/* ====== Footer ====== */
+.footer {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 1.2rem;
+}
+.footer span {
+  color: var(--primary-purple);
+  font-weight: 600;
+}
+/* ====== Enhanced Mobile Responsive Design ====== */
+
+/* Base adjustments for all mobile devices */
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+    min-height: 100vh;
+    align-items: flex-start;
+    background: linear-gradient(135deg, #f8f6ff, #ede9fe);
+  }
+  
+  #verification-card {
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100vh;
+    margin: 0;
+    padding: 1.5rem 1rem;
+    max-width: 100%;
+  }
+}
+
+/* Mobile Portrait (Most Common Mobile View) */
+@media (max-width: 480px) {
+  body {
+    padding: 0;
+    align-items: flex-start;
+    overflow-x: hidden;
+  }
+  
+  #verification-card {
+    padding: 1.2rem 1rem;
+    margin: 0;
+    max-width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100vh;
+  }
+  
+  /* Header */
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+  }
+  
+  h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+  }
+  
+  hr {
+    margin: 0.8rem 0;
+  }
+  
+  /* Camera Canvas */
+  #camera-canvas {
+    aspect-ratio: 4 / 3;
+    margin-bottom: 0.8rem;
+    border-radius: 10px;
+  }
+  
+  /* Status Text */
+  #status-text {
+    font-size: 0.85rem;
+    margin-top: 0.6rem;
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+  }
+  
+  /* Buttons Container */
+  .btn-container {
+    flex-direction: column;
+    gap: 0.7rem;
+    margin-top: 0.8rem;
+  }
+  
+  /* All Buttons */
+  button {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    font-size: 0.95rem;
+    border-radius: 25px;
+    font-weight: 600;
+  }
+  
+  #cancel-btn {
+    margin-top: 0.7rem;
+  }
+  
+  /* Images */
+  #userFaceImg,
+  img {
+    margin-bottom: 0.8rem;
+    border-radius: 10px;
+  }
+  
+  /* Paragraph text */
+  p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  /* Footer */
+  .footer {
+    font-size: 0.75rem;
+    margin-top: 1rem;
+  }
+  
+  /* Modal */
+  .modal {
+    width: 85%;
+    max-width: 280px;
+    padding: 1.2rem 1.5rem;
+  }
+  
+  .modal h3 {
+    font-size: 1.1rem;
+  }
+  
+  .modal p {
+    font-size: 0.85rem;
+  }
+}
+
+/* Extra Small Screens (320px - 375px) */
+@media (max-width: 375px) {
+  #verification-card {
+    padding: 1rem 0.8rem;
+  }
+  
+  h1 {
+    font-size: 1.35rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  h2 {
+    font-size: 1rem;
+    margin-bottom: 0.7rem;
+  }
+  
+  button {
+    font-size: 0.9rem;
+    padding: 0.85rem 0.9rem;
+  }
+  
+  #status-text {
+    font-size: 0.8rem;
+  }
+  
+  .footer {
+    font-size: 0.7rem;
+  }
+}
+
+/* Very Small Screens (< 320px) */
+@media (max-width: 320px) {
+  h1 {
+    font-size: 1.25rem;
+  }
+  
+  h2 {
+    font-size: 0.95rem;
+  }
+  
+  button {
+    font-size: 0.85rem;
+    padding: 0.8rem 0.8rem;
+  }
+  
+  #camera-canvas {
+    border-radius: 8px;
+  }
+}
+
+/* Landscape Mobile (Common when rotating phone) */
+@media (max-width: 768px) and (orientation: landscape) {
+  body {
+    padding: 0.5rem;
+  }
+  
+  #verification-card {
+    padding: 1rem;
+    max-width: 100%;
+    min-height: auto;
+  }
+  
+  h1 {
+    font-size: 1.3rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  h2 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  #camera-canvas {
+    aspect-ratio: 16 / 9;
+    max-height: 40vh;
+  }
+  
+  .btn-container {
+    flex-direction: row;
+    gap: 0.8rem;
+  }
+  
+  button {
+    padding: 0.7rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Tablet Portrait (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  body {
+    padding: 1rem;
+    align-items: center;
+  }
+  
+  #verification-card {
+    max-width: 90%;
+    padding: 2rem 1.5rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(108, 92, 231, 0.2);
+    min-height: auto;
+  }
+  
+  h1 {
+    font-size: 1.6rem;
+  }
+  
+  h2 {
+    font-size: 1.15rem;
+  }
+  
+  #camera-canvas {
+    aspect-ratio: 16/9;
+  }
+  
+  .btn-container {
+    flex-direction: row;
+    gap: 1rem;
+  }
+  
+  button {
+    font-size: 0.95rem;
+    padding: 0.85rem;
+  }
+}
+
+/* Touch-friendly adjustments for all mobile */
+@media (hover: none) and (pointer: coarse) {
+  button {
+    min-height: 44px; /* Apple's recommended touch target size */
+    padding: 0.9rem 1rem;
+  }
+  
+  /* Increase tap area without visual change */
+  button::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+  }
+  
+  button {
+    position: relative;
+  }
+}
+</style>
+
+<div id="verification-card">
+  <h1>Face Registration</h1>
+  <h2>{{ user.username }}</h2>
+  <hr>
+
+{% if old_face %}
+  <p style="font-weight:600;">Current Registered Face:</p>
+  <img id="userFaceImg"
+       src="{{ old_face }}?v={{ timestamp }}"
+       style="width:100%; border-radius:12px; border:2px solid var(--primary-purple); margin-bottom:1rem;">
+{% endif %}
+
+
+  {% if pending_face %}
+    <p style="color:orange; font-weight:600;">Pending Admin Approval </p>
+    <img src="{{ pending_face }}" style="width:100%; border-radius:12px; border:2px solid orange; margin-bottom:1rem;">
+    <button disabled>Capture Disabled</button>
+  {% else %}
+    <div id="camera-canvas">
+      <canvas id="video-canvas" width="400" height="300"></canvas>
+    </div>
+    <p id="status-text">Align your face and click capture</p>
+
+    <div class="loader" id="loader"></div>
+
+    <div class="btn-container">
+      <button id="capture-btn">Capture</button>
+      <button id="submit-btn" disabled>Submit</button>
+    </div>
+  {% endif %}
+
+  <form action="{% url 'userdash' %}" method="post" style="width:100%;">
+    {% csrf_token %}
+    <button id="cancel-btn" type="submit">Back</button>
+  </form>
+
+  <p class="footer">Powered by <span>DeepFace (SFace)</span></p>
+</div>
+
+<!-- Modal Popup -->
+<div id="modal" class="modal">
+  <h3></h3>
+  <p></p>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const videoCanvas = document.getElementById('video-canvas');
+  if (!videoCanvas) return; // no camera area (e.g. pending_face mode)
+
+  const ctx = videoCanvas.getContext('2d');
+  const video = document.createElement('video');
+  const statusText = document.getElementById('status-text');
+  const loader = document.getElementById('loader');
+  const captureBtn = document.getElementById('capture-btn');
+  const submitBtn = document.getElementById('submit-btn');
+  const modal = document.getElementById('modal');
+
+  //   Force autoplay (required by some browsers)
+  video.setAttribute("autoplay", true);
+  video.setAttribute("playsinline", true);
+
+  // ====== Modal Popup ======
+  function showModal(title, msg, type = "success") {
+    modal.classList.remove("success", "error");
+    modal.classList.add(type, "show");
+    modal.querySelector("h3").textContent = title;
+    modal.querySelector("p").textContent = msg;
+    setTimeout(() => modal.classList.remove("show"), 3000);
+  }
+
+  // ====== Initialize Camera ======
+  async function initCamera() {
+    try {
+      //   Check for camera availability
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusText.textContent = "  Camera not supported on this browser.";
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: 640, height: 480 },
+        audio: false
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      // Resize canvas to match video
+      videoCanvas.width = video.videoWidth || 640;
+      videoCanvas.height = video.videoHeight || 480;
+
+      drawFrame();
+      statusText.textContent = "Camera ready! Align your face in the frame.";
+
+    } catch (err) {
+      console.error("Camera error:", err);
+      statusText.textContent = "Cannot access webcam. Please allow camera permission.";
+      showModal("Camera Error", "Please allow camera access to continue.", "error");
+    }
+  }
+
+  // ====== Draw video frames ======
+  function drawFrame() {
+    ctx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+    requestAnimationFrame(drawFrame);
+  }
+
+  // ====== Capture Face ======
+  captureBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const imageData = getCroppedFace();
+    localStorage.setItem('new_face', imageData);
+    submitBtn.disabled = false;
+    statusText.textContent = "Face captured! Ready to verify or save.";
+  });
+
+  // ====== Crop Center Face ======
+  function getCroppedFace() {
+    const size = Math.min(videoCanvas.width, videoCanvas.height) / 2;
+    const x = videoCanvas.width / 2 - size / 2;
+    const y = videoCanvas.height / 2 - size / 2;
+    const faceCanvas = document.createElement('canvas');
+    faceCanvas.width = size;
+    faceCanvas.height = size;
+    faceCanvas.getContext('2d').drawImage(videoCanvas, x, y, size, size, 0, 0, size, size);
+    return faceCanvas.toDataURL('image/jpeg', 0.9);
+  }
+
+  // ====== Submit Captured Face ======
+  submitBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const imageData = localStorage.getItem('new_face');
+    if (!imageData) return;
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    loader.style.display = "block";
+    statusText.textContent = "Verifying your face with DeepFace (SFace)...";
+    captureBtn.disabled = true;
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch("{% url 'face_add' %}", {
+        method: "POST",
+        headers: {"Content-Type": "application/json", "X-CSRFToken": csrfToken},
+        body: JSON.stringify({ image_data: imageData })
+      });
+      const data = await res.json();
+      loader.style.display = "none";
+
+      if (data.status === "success") {
+        showModal("  Verified!", "Face successfully verified & updated.", "success");
+        statusText.textContent = "  Face verified and updated successfully!";
+
+        // Force reload of the image with new timestamp
+        const img = document.getElementById("userFaceImg");
+        if (img) {
+          img.classList.add("updating");
+          img.src = img.src.split("?")[0] + "?v=" + new Date().getTime();
+          img.onload = () => img.classList.remove("updating");
+        }
+      } else {
+        showModal("Error", data.message || "Face did not match. Try again.", "error");
+        statusText.textContent = "Face did not match. Try again.";
+        captureBtn.disabled = false;
+        submitBtn.disabled = false;
+      }
+
+    } catch (err) {
+      loader.style.display = "none";
+      console.error("Network error:", err);
+      showModal("Network Error", "Please check your connection.", "error");
+      statusText.textContent = "Network error. Please retry.";
+      captureBtn.disabled = false;
+      submitBtn.disabled = false;
+    }
+  });
+
+  //   Initialize only after everything is ready
+  initCamera();
+});
+</script>
+
+{% endblock %}

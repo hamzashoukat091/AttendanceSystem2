@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Help & Support | AttendEase{% endblock %}
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Help & Support | AttendEase</title>
+  <style>
+    :root {
+      --primary-purple: #6A0DAD;
+      --light-purple: #f3e8ff;
+      --text-dark: #2c2c2c;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #fff;
+      color: var(--text-dark);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .support-container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary-purple);
+      margin-bottom: 20px;
+    }
+
+    .faq, .troubleshooting, .contact {
+      background: var(--light-purple);
+      border-left: 5px solid var(--primary-purple);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      box-shadow: 0px 3px 6px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: var(--primary-purple);
+      margin-bottom: 15px;
+    }
+
+    .faq p, .troubleshooting p {
+      margin: 10px 0;
+    }
+
+    .contact-info {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .contact-info strong {
+      color: var(--primary-purple);
+    }
+  </style>
+</head>
+<body>
+  <div class="support-container">
+    <h1>Help & Support - AttendEase</h1>
+
+    <!-- FAQ Section -->
+    <div class="faq">
+      <h2>Frequently Asked Questions</h2>
+      <p><strong>Q:</strong> How do I register my face in AttendEase?<br>
+         <strong>A:</strong> Go to your dashboard → "Add Face" → Capture or Upload your face → Wait for admin approval.</p>
+
+      <p><strong>Q:</strong> What if my face is not detected?<br>
+         <strong>A:</strong> Ensure good lighting and a clear view of your face. Avoid background clutter.</p>
+
+      <p><strong>Q:</strong> Can faculty scan multiple faces at once?<br>
+         <strong>A:</strong> Yes! Faculty can upload up to 3 images for batch recognition in classrooms.</p>
+
+      <p><strong>Q:</strong> How do I check my attendance?<br>
+         <strong>A:</strong> Navigate to "Attendance Records" in your dashboard to see check-in and check-out times.</p>
+    </div>
+
+    <!-- Troubleshooting Section -->
+    <div class="troubleshooting">
+      <h2>Troubleshooting</h2>
+      <p><strong>Face Not Recognized:</strong> Make sure your face is already registered and approved by the admin.</p>
+      <p><strong>Login Issues:</strong> Reset your password using the "Forgot Password" option.</p>
+      <p><strong>Attendance Not Marked:</strong> Ensure check-in/check-out hasn’t already been recorded today.</p>
+      <p><strong>System Error (500):</strong> Contact support with error details.</p>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="contact">
+      <h2>Contact Support</h2>
+      <div class="contact-info">
+        <p><strong>Email:</strong> support@attendease.com</p>
+        <p><strong>Phone:</strong> +91-XXXXX-XXXXX</p>
+        <p><strong>Live Chat:</strong> Available Mon-Thr, 9AM - 6PM</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+{% endblock %}

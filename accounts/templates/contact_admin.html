@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Support & Contact | AttendEase{% endblock %}
+{% block content %}
+
+<style>
+    .contact-wrapper {
+        margin-top: 120px;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 25px;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #6C5CE7;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .section-sub {
+        text-align: center;
+        color: #777;
+        margin-bottom: 25px;
+        font-size: 1rem;
+    }
+
+    .info-box {
+        background: #f7f5ff;
+        border-left: 5px solid #6C5CE7;
+        padding: 18px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .info-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #6C5CE7;
+        margin-bottom: 6px;
+    }
+
+    .info-text {
+        font-size: 1rem;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .support-button {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(45deg, #6A0DAD, #9b59b6);
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 12px;
+        text-align: center;
+        display: block;
+        margin-top: 12px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .support-button:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        transition: 0.2s;
+    }
+
+    @media(max-width: 500px) {
+        .contact-wrapper { width: 90%; padding: 20px; }
+        .section-title { font-size: 1.7rem; }
+    }
+</style>
+
+<div class="contact-wrapper">
+
+    <h2 class="section-title">Support & Contact</h2>
+    <p class="section-sub">Have issues? Need help? Find admin details and troubleshooting steps here.</p>
+
+    <!-- Admin Information -->
+    <div class="info-box">
+        <div class="info-title">Admin Information</div>
+        <div class="info-text">
+            <strong>Admin Name:</strong> AttendEase Support Team <br>
+            <strong>Role:</strong> System Administrator & Technical Support <br>
+            <strong>Working Hours:</strong> 10:00 AM - 7:00 PM (Mon - Sat)
+        </div class=>
+    </div>
+
+    <!-- Contact Information -->
+    <div class="info-box">
+        <div class="info-title">Contact Details</div>
+        <div class="info-text">
+            <strong>Phone:</strong> +91 98765 43210 <br>
+            <strong>WhatsApp:</strong> +91 98765 43210 <br>
+            <strong>Email:</strong> support@attendease.ai
+        </div>
+    </div>
+
+    <!-- Troubleshoot Link -->
+    <div class="info-box">
+        <div class="info-title">Need Troubleshooting?</div>
+        <div class="info-text">
+            If you are facing issues with face detection, login, attendance, or camera access — visit our troubleshooting page.
+            It includes step-by-step solutions for all common problems.
+        </div>  
+        <a href="{% url 'help_support' %}" class="support-button">Go to Troubleshoot Guide</a>
+    </div>
+
+    <!-- Technical Stack Info -->
+    <div class="info-box">
+        <div class="info-title">Powered By</div>
+        <div class="info-text">
+            AttendEase uses advanced technologies to give accurate and secure attendance processing:
+            <br><br>
+            • <strong>OpenCV</strong> : Face Detection & Camera Processing <br>
+            • <strong>DeepFace</strong> : SFace <br>
+            • <strong>Django</strong> : Backend & Server Logic <br>
+            • <strong>AI-based Matching</strong> : Attendance Verification System
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

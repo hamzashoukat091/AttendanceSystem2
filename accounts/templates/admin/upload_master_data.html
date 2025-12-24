@@ -1,0 +1,388 @@
+{% extends "admin/base_site.html" %}
+{% load custom_filters %}
+
+{% block extrajs %}
+<script src="https://unpkg.com/lucide@latest"></script>
+{% endblock %}
+
+{% block content %} 
+<div class="upload-page">
+  <div class="upload-container">
+    <!-- Upload Card -->
+    <div class="upload-card">
+      <div class="header-icon">
+        <i data-lucide="upload-cloud"></i>
+      </div>
+      <h2 class="page-title">Upload Master Data</h2>
+      <p class="subtitle">
+        Upload your <strong>CSV file</strong> containing  
+        <code>username</code>, <code>enrollment_no</code>, <code>email</code>, <code>user_type</code>, and <code>face_path</code>.  
+        The system will automatically sync and approve users.
+      </p>
+
+      <!-- Upload Form -->
+      <form method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+        {% csrf_token %}
+        <div class="file-drop" id="drop-zone">
+          <input type="file" id="file-upload" name="file" accept=".csv" required hidden>
+          <label for="file-upload" id="upload-label">
+            <i data-lucide="file-up"></i>
+            <p>Drag & drop your CSV file here or <span>click to browse</span></p>
+          </label>
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="progress-bar-container">
+          <div id="progress-bar"></div>
+        </div>
+
+        <button type="submit" class="btn-upload">
+          <i data-lucide="arrow-up-circle"></i> Upload File
+        </button>
+      </form>
+    </div>
+
+    <!-- Recent Uploads -->
+    <div class="uploads-section">
+      <div class="header-icon small">
+        <i data-lucide="clock"></i>
+      </div>
+      <h3 class="section-title">Recent Uploads</h3>
+
+      {% if uploads %}
+      <div class="table-container">
+        <table class="modern-table">
+          <thead>
+            <tr>
+              <th><i data-lucide="file-text"></i> File Name</th>
+              <th><i data-lucide="user"></i> Uploaded By</th>
+              <th><i data-lucide="calendar"></i> Uploaded On</th>
+              <th><i data-lucide="rows"></i> Rows</th>
+              <th><i data-lucide="plus"></i> Created</th>
+              <th><i data-lucide="edit"></i> Updated</th>
+              <th><i data-lucide="settings"></i> Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in uploads %}
+            <tr>
+              <td>{{ u.file.name|cut:"uploads/"|cut:"master/" }}</td>
+              <td>{{ u.uploaded_by }}</td>
+              <td>{{ u.uploaded_at|date:"Y-m-d H:i" }}</td>
+              <td>{{ u.total_rows }}</td>
+              <td>{{ u.created_rows }}</td>
+              <td>{{ u.updated_rows }}</td>
+              
+                <td class="actions">
+                  <a href="{{ u.file.url }}" target="_blank" class="link-view">
+                    <i data-lucide="eye"></i> View
+                  </a>
+                  <span class="divider">|</span>
+                  <a href="?reupload={{ u.id }}" class="link-edit">
+                    <i data-lucide="refresh-ccw"></i> Reupload
+                  </a>
+                  <span class="divider">|</span>
+                  <a href="?delete={{ u.id }}" class="link-delete" onclick="return confirmDelete(event, '{{ u.file.name|cut:"uploads/"|cut:"master/" }}'">
+                    <i data-lucide="trash-2"></i> Delete
+                  </a>
+                  </td>
+            
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i data-lucide="database"></i>
+        <p>No uploads yet. Start by uploading your first master file </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast">File uploaded successfully  </div>
+
+<style>
+/* ===== Page Container ===== */
+.upload-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: radial-gradient(circle at top left, #f5f3ff, #ede9fe, #f8f6ff);
+  font-family: 'Inter', sans-serif;
+  padding: 40px 15px;
+}
+
+/* ===== Container ===== */
+.upload-container {
+  max-width: 1000px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 35px;
+}
+
+/* ===== Upload Card ===== */
+.upload-card {
+  width: 100%;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 10px 25px rgba(123, 44, 191, 0.15);
+  padding: 40px 35px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+.upload-card:hover {
+  box-shadow: 0 12px 35px rgba(123, 44, 191, 0.25);
+}
+.header-icon {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(120deg, #7b2cbf, #9333ea);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin: 0 auto 15px;
+}
+.header-icon.small {
+  width: 50px;
+  height: 50px;
+}
+.page-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #6f2dbd;
+  margin-bottom: 10px;
+}
+.subtitle {
+  color: #5b21b6;
+  font-size: 0.95rem;
+  margin-bottom: 25px;
+}
+
+/* ===== File Drop ===== */
+.file-drop {
+  border: 2px dashed #7b2cbf;
+  border-radius: 12px;
+  padding: 45px 20px;
+  background: #faf5ff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.file-drop:hover {
+  background: #f3e8ff;
+}
+.file-drop p {
+  margin-top: 10px;
+  color: #6d28d9;
+  font-weight: 500;
+}
+.file-drop span {
+  color: #9333ea;
+  font-weight: 600;
+}
+
+/* ===== Progress Bar ===== */
+#progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #ede9fe;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 20px;
+  display: none;
+}
+#progress-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #7b2cbf, #9333ea);
+  transition: width 0.3s ease-in-out;
+}
+
+/* ===== Upload Button ===== */
+.btn-upload {
+  margin-top: 25px;
+  background: linear-gradient(90deg, #7b2cbf, #9333ea);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+.btn-upload:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(123,44,191,0.3);
+}
+
+/* ===== Uploads Table ===== */
+.uploads-section {
+  width: 100%;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 30px;
+  text-align: center;
+}
+.section-title {
+  color: #5a189a;
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+}
+.table-container {
+  overflow-x: auto;
+  border-radius: 10px;
+}
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+.modern-table th {
+  background: linear-gradient(90deg, #7b2cbf, #9333ea);
+  color: white;
+  padding: 12px 10px;
+  text-align: left;
+}
+.modern-table td {
+  padding: 10px 10px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+.modern-table tr:hover {
+  background: #faf5ff;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .upload-page {
+    padding: 25px 10px;
+  }
+  .upload-card, .uploads-section {
+    padding: 25px;
+  }
+  .page-title {
+    font-size: 1.5rem;
+  }
+  .subtitle {
+    font-size: 0.85rem;
+  }
+  .modern-table th, .modern-table td {
+    font-size: 0.8rem;
+    padding: 8px;
+  }
+}
+</style>
+
+<style>
+.link-view, .link-edit, .link-delete {
+  color: #7b2cbf;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+.link-view:hover { color: #4f46e5; }
+.link-edit:hover { color: #9333ea; }
+.link-delete {
+  color: #dc2626;
+}
+.link-delete:hover {
+  color: #b91c1c;
+}
+.divider {
+  color: #aaa;
+  margin: 0 6px;
+}
+.actions i {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  margin-right: 3px;
+}
+</style>
+
+<script>
+function confirmDelete(event, filename) {
+  event.preventDefault();
+  if (confirm(`🗑 Are you sure you want to delete "${filename}"?\n\nThis will remove only the file — user data will remain.`)) {
+    window.location = event.target.closest('a').href;
+  }
+}
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+});
+
+const dropZone = document.getElementById("drop-zone");
+const fileInput = document.getElementById("file-upload");
+const uploadLabel = document.getElementById("upload-label");
+const progressContainer = document.getElementById("progress-bar-container");
+const progressBar = document.getElementById("progress-bar");
+const toast = document.getElementById("toast");
+const uploadForm = document.getElementById("uploadForm");
+
+// Drag & Drop
+dropZone.addEventListener("click", () => fileInput.click());
+dropZone.addEventListener("dragover", e => {
+  e.preventDefault();
+  dropZone.style.background = "#ede9fe";
+});
+dropZone.addEventListener("dragleave", () => {
+  dropZone.style.background = "#faf5ff";
+});
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  fileInput.files = e.dataTransfer.files;
+  uploadLabel.innerHTML = `<p><strong>${fileInput.files[0].name}</strong> ready to upload  </p>`;
+  dropZone.style.background = "#f3e8ff";
+  lucide.createIcons();
+});
+
+fileInput.addEventListener("change", () => {
+  if (fileInput.files.length > 0) {
+    const fileName = fileInput.files[0].name;
+    uploadLabel.innerHTML = `<p><strong>${fileName}</strong> ready to upload  </p>`;
+    dropZone.style.background = "#f3e8ff";
+    lucide.createIcons();
+  }
+});
+
+uploadForm.addEventListener("submit", e => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  progressContainer.style.display = "block";
+  let width = 0;
+  const interval = setInterval(() => {
+    width += 10;
+    progressBar.style.width = width + "%";
+    if (width >= 100) {
+      clearInterval(interval);
+      showToast("  File uploaded successfully!");
+      progressBar.style.width = "100%";
+    }
+  }, 150);
+});
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 3500);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+{% load custom_filters %}
+{% block content %}
+
+<div class="dashboard-container">
+  <h2>Master Data — {{ filename }}</h2>
+  <p style="color:#5a189a;">Edit, add, or delete rows below and click Save to sync changes.</p>
+
+  <div class="actions">
+    <button type="button" id="add-row" class="btn purple">Add Row</button>
+    <button type="button" id="delete-row" class="btn danger">Delete Selected</button>
+    <button type="button" id="save-btn" class="btn success">Save Changes</button>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select-all"></th>
+          {% for col in columns %}
+            <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td><input type="checkbox" class="row-select"></td>
+          {% for col in columns %}
+            <td contenteditable="true">{{ row|get_item:col }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+.dashboard-container { padding: 20px; background: #f8f6ff; border-radius: 15px; }
+.actions { margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap; }
+.table-wrapper { overflow-x: auto; max-height: 500px; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 4px 12px rgba(123,44,191,0.15); }
+#data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+#data-table th, #data-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+#data-table th { background: #9333ea; color: white; }
+#data-table td[contenteditable="true"]:focus { background: #f0e8ff; outline: 2px solid #7b2cbf; }
+.btn { padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.9rem; }
+.btn.purple { background: #7b2cbf; }
+.btn.danger { background: #e11d48; }
+.btn.success { background: #16a34a; }
+</style>
+
+<script>
+document.getElementById("select-all").addEventListener("change", function() {
+  document.querySelectorAll(".row-select").forEach(cb => cb.checked = this.checked);
+});
+
+document.getElementById("add-row").addEventListener("click", () => {
+  const tbody = document.querySelector("#data-table tbody");
+  const colCount = document.querySelectorAll("#data-table thead th").length - 1;
+  const row = document.createElement("tr");
+  row.innerHTML = `<td><input type='checkbox' class='row-select'></td>` +
+    Array.from({length: colCount}).map(()=>`<td contenteditable='true'></td>`).join("");
+  tbody.appendChild(row);
+});
+
+document.getElementById("delete-row").addEventListener("click", () => {
+  const checked = document.querySelectorAll(".row-select:checked");
+  if (!checked.length) return alert("⚠️ Select a row first!");
+  if (!confirm("Delete selected rows?")) return;
+  checked.forEach(cb => cb.closest("tr").remove());
+});
+
+document.getElementById("save-btn").addEventListener("click", async () => {
+  const rows = [];
+  const headers = [...document.querySelectorAll("#data-table th")].slice(1).map(h => h.innerText.trim());
+  document.querySelectorAll("#data-table tbody tr").forEach(tr => {
+    const cells = [...tr.querySelectorAll("td")].slice(1);
+    const obj = {};
+    headers.forEach((h,i)=>obj[h]=cells[i].innerText.trim());
+    rows.push(obj);
+  });
+
+  const res = await fetch("", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
+    body: JSON.stringify({ filename: "{{ filename }}", rows })
+  });
+  const data = await res.json();
+  alert(`  Saved! ${data.created} created, ${data.updated} updated.`);
+});
+</script>
+
+{% endblock %}

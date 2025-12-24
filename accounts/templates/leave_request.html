@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Leave Request | AttendEase{% endblock %}
+{% block content %}
+
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* --- Global Styles --- */
+        :root {
+            --color-primary: #6C5CE7;
+            --color-secondary: #A29BFE;
+            --bg-page: #F7F8FC;
+            --bg-card: #FFFFFF;
+            --color-text: #333333;
+            --color-gray-dark: #4B5563;
+            --color-gray-light: #D1D5DB;
+            --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --border-radius-xl: 12px;
+            --border-radius-lg: 8px;
+            --transition-time: 0.2s;
+
+                --cancel-red: #D32F2F; 
+            --cancel-red-secondary: #FF5722; 
+
+        }
+
+        body {
+            background-color: var(--bg-page);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 2rem 0;
+            padding: 0 1rem;
+        }
+
+        /* --- Card Layout --- */
+        .card {
+            background-color: var(--bg-card);
+            padding: 2rem;
+            border-radius: var(--border-radius-xl);
+            box-shadow: var(--shadow-soft);
+            max-width: 550px;
+            margin: 0 auto 3rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--color-text);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--color-text);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        /* --- Form Styling --- */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-gray-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1.25rem;
+            height: 1.25rem;
+            color: #9CA3AF;
+            pointer-events: none;
+        }
+
+        .input-field, .input-select, .input-textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            border: 1px solid var(--color-gray-light);
+            border-radius: var(--border-radius-lg);
+            transition: border-color var(--transition-time), box-shadow var(--transition-time);
+            color: var(--color-text);
+            box-sizing: border-box;
+        }
+        
+        .input-textarea {
+            padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+            resize: vertical;
+        }
+
+        .input-field:focus, .input-select:focus, .input-textarea:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2);
+            outline: none;
+        }
+        
+        .input-select {
+            padding-left: 2.5rem;
+            appearance: none;
+        }
+        
+        .input-select-arrow {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1rem;
+            height: 1rem;
+            color: #9CA3AF;
+            pointer-events: none;
+        }
+
+        /* --- Button --- */
+        .btn-primary {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--bg-card);
+            border: none;
+            border-radius: var(--border-radius-xl);
+            cursor: pointer;
+            background: linear-gradient(90deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+            transition: all var(--transition-time) ease-in-out;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(108, 92, 231, 0.4);
+        }
+        
+        /* --- History Table --- */
+        .history-section {
+            margin-top: 3rem;
+        }
+        
+        .table-wrapper {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-xl);
+            box-shadow: var(--shadow-soft);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        th {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6B7280;
+            background-color: #F9FAFB;
+        }
+        
+        td {
+            font-size: 0.875rem;
+            color: #374151;
+        }
+
+        tr:hover {
+            background-color: #F9FAFB;
+            transition: background-color 0.15s;
+        }
+        
+        /* Status Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            white-space: nowrap;
+        }
+        .badge-pending { background: #FEF3C7; color: #92400E; }
+        .badge-approved { background: #D1FAE5; color: #065F46; }
+        .badge-rejected { background: #FEE2E2; color: #991B1B; }
+
+        /* Toast */
+        #app-toast {
+            position: fixed;
+            top: 1.25rem;
+            z-index: 50;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.3s ease-in-out;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+         #cancel-btn {
+            width: 100%;
+            background-image: linear-gradient(to right, var(--cancel-red), var(--cancel-red-secondary));
+            box-shadow: 0 10px 15px -3px rgba(211, 47, 47, 0.3), 0 4px 6px -4px rgba(211, 47, 47, 0.3);
+            margin-top: 0.5rem; /* Space above the button */
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border: none;
+             border-radius: var(--border-radius-xl);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            color: #fff;
+        
+        }
+
+
+
+.leave-day {
+    background-color: #FACC15;  /* Yellow */
+    font-weight: bold;
+}
+
+
+
+.empty {
+    background-color: transparent;
+    cursor: default;
+}
+    </style>
+</head>
+<body>
+    <!-- Toast Notification -->
+    {% comment %} <div id="app-toast" class="hidden" style="background-color: #10b981ff;">
+        <div style="display: flex; align-items: center;">
+            <i id="toast-icon" data-lucide="check-circle" class="toast-icon"></i>
+            <span id="toast-message" style="font-size: 0.875rem; font-weight: 500;"></span>
+        </div>
+        <button onclick="document.getElementById('app-toast').classList.add('hidden')" class="toast-close-btn">
+            <i data-lucide="x" style="width: 1rem; height: 1rem;"></i>
+        </button>
+        </div> {% endcomment %}
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Leave Request Card -->
+        <div class="card">
+               <center><h5>Hello, {{user.username}}</h5> </center>
+            <h1 class="page-title">Leave Request</h1>
+           
+
+            {% comment %} action="{% url 'submit_leave_request' %}" {% endcomment %}
+            <form method="POST" >
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="startDate">Start Leave Date</label>
+                        <div class="input-wrapper">
+                            <input type="date" id="startDate" name="start_date" required class="input-field">
+                            <i data-lucide="calendar" class="input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">End Leave Date</label>
+                        <div class="input-wrapper">
+                            <input type="date" id="endDate" name="end_date" required class="input-field">
+                            <i data-lucide="calendar" class="input-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="leaveType">Type of Leave</label>
+                    <div class="input-wrapper">
+                        <select id="leaveType" name="leave_type" required class="input-field input-select">
+                            <option value="" disabled selected>Select a leave type</option>
+                            <option value="Sick Leave">Sick Leave</option>
+                            <option value="Casual Leave">Casual Leave</option>
+                            <option value="Vacation">Vacation</option>
+                            <option value="Emergency">Emergency</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <i data-lucide="list-ordered" class="input-icon"></i>
+                        <i data-lucide="chevron-down" class="input-select-arrow"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reason">Reason for Leave</label>
+                    <div class="input-wrapper">
+                        <textarea id="reason" name="reason" rows="4" maxlength="500" placeholder="Enter your reason (max 500 characters)..." required class="input-textarea"></textarea>
+                        <i data-lucide="message-square" class="input-icon" style="top: 1rem; transform: none;"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">Send Leave Request</button>
+            </form>
+
+                    <form action="{% url 'userdash' %}" method="post">
+                {% csrf_token %}
+          <button id="cancel-btn" onclick="return confirm('Are You sure to Cancle?')">
+              Cancel Session
+        </button>
+    </form>
+
+        </div>
+
+        <!-- Leave History -->
+        <div class="history-section">
+            <h2 class="section-title">Leave History</h2>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date Range</th>
+                            <th>Type</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Created On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leave_requests %}
+                            <tr>
+                                <td>{{ leave.start_date }} → {{ leave.end_date }}</td>
+                                <td>{{ leave.leave_type }}</td>
+                                <td>{{ leave.reason|truncatechars:70 }}</td>
+                                <td>
+                                    {% if leave.status == "Approved" %}
+                                        <span class="badge badge-approved">Approved</span>
+                                    {% elif leave.status == "Rejected" %}
+                                        <span class="badge badge-rejected">Rejected</span>
+                                    {% else %}
+                                        <span class="badge badge-pending">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ leave.created_at }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: #6B7280; padding: 1rem;">
+                                    No leave requests found.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+{% if messages %}
+    <div id="app-toast" style="background-color: #10b981; color: white; padding: 10px; margin: 10px; border-radius: 8px;">
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+{% endif %}
+
+    <script>
+              setTimeout(() => {
+            let toast = document.getElementById("app-toast");
+            if (toast) toast.style.display = "none";
+        }, 4000);
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
+
+{%endblock%}

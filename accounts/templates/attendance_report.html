@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Attendance Report | AttendEase{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Report</title>
+  <style>
+    :root {
+      --primary-purple: #6C5CE7;
+      --secondary-purple: #A29BFE;
+      --bg-light: #f4f6f9;
+      --text-dark: #333;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg-light);
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1000px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 10px rgba(108, 92, 231, 0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: var(--primary-purple);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    table th {
+      background: var(--primary-purple);
+      color: white;
+      font-size: 15px;
+    }
+
+    table tr:nth-child(even) {
+      background-color: #fafaff;
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .bg-success { background-color: var(--secondary-purple); color: white; }
+    .bg-danger { background-color: #ff7675; color: white; }
+    .bg-warning { background-color: #ffeb3b; color: #333; }
+
+    .no-records {
+      text-align: center;
+      color: #777;
+      font-style: italic;
+    }
+
+    .go-back-btn {
+      margin:20px; 
+      padding: 0.85rem 1.2rem;
+      background: linear-gradient(135deg, #794BC4, #9C27B0);
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 10px rgba(121, 75, 196, 0.3);
+      transition: all 0.25s ease-in-out;
+    }
+
+    .go-back-btn:hover {
+      background: linear-gradient(135deg, #8E5CE6, #B347E5);
+      box-shadow: 0 6px 14px rgba(156, 39, 176, 0.4);
+      transform: translateY(-2px) scale(1.03);
+    }
+
+    .download-btn {
+      background: linear-gradient(135deg, #00f260, #0575e6);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 25px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 255, 150, 0.4);
+      transition: all 0.3s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .download-btn:hover {
+      background: linear-gradient(135deg, #0575e6, #00f260);
+      transform: scale(1.05);
+      box-shadow: 0 6px 18px rgba(0, 255, 150, 0.6);
+    }
+
+    .section-divider {
+      margin: 50px 0 30px;
+      border-top: 3px solid var(--primary-purple);
+      width: 70%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+
+<button class="go-back-btn" onclick="window.location.href='{% url 'userdash' %}'">  
+  Go Back
+</button>
+
+<!-- ================= DAILY ATTENDANCE ================= -->
+<div class="container">
+  <h2>Daily Attendance Report</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Date</th>
+        <th>Check-In</th>
+        <th>Check-Out</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+      <tr>
+        <td>{{ record.user.username }}</td>
+        <td>{{ record.date|date:"Y-m-d" }}</td>
+        <td>{{ record.check_in|default:"--"|time:"H:i:s" }}</td>
+        <td>{{ record.check_out|default:"--"|time:"H:i:s" }}</td>
+       <td>
+    {% if record.status == "Leave" %}
+      <span class="badge bg-late"> Leave</span>
+    {% elif record.status == "Holiday" %}
+      <span class="badge bg-success"> Holiday</span>
+    {% elif record.check_in and record.check_out %}
+      <span class="badge bg-success">  Present</span>
+    {% elif record.check_in %}
+      <span class="badge bg-warning text-dark"> Checked In (No Check-Out)</span>
+    {% else %}
+      <span class="badge bg-danger">  Absent</span>
+    {% endif %}
+</td>
+
+
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="no-records">No attendance records available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <center>
+    <button 
+      onclick="window.location.href='{% url 'download_attendance_csv' %}'" 
+      class="download-btn">
+       Download Daily Report (CSV)
+    </button>
+  </center>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ================= MONTHLY ATTENDANCE ================= -->
+<div class="container">
+  <h2> Monthly Attendance Summary</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Month</th>
+        <th>Total Days</th>
+        <th>Present</th>
+        <th>Absent</th>
+        <th>Leave</th>
+        <th>Holiday</th>
+        <th>Attendance %</th>
+      </tr>
+    </thead>
+<tbody>
+  {% for record in monthly_records %}
+  <tr>
+    <td>{{ record.month }}/{{ record.year }}</td>
+    <td>{{ record.total_days }}</td>
+    <td>{{ record.present_days }}</td>
+    <td>{{ record.absent_days }}</td>
+    <td>{{ record.leave_days }}</td>
+    <td>{{ record.holidays }}</td>
+    <td>{{ record.percentage }}%</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="7" class="no-records">No monthly data available.</td></tr>
+  {% endfor %}
+</tbody>
+  </table>
+
+  <center>
+    <button 
+      onclick="window.location.href='{% url 'download_monthly_attendance_csv' %}'" 
+      class="download-btn">
+      ⬇️ Download Monthly Report (CSV)
+    </button>
+  </center>
+</div>
+
+</body>
+</html>
+{% endblock %}

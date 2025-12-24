@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Attendance Mark | AttendEase{% endblock %}
+{% block content %}
+
+<style>
+:root {
+  --primary-purple: #6C5CE7;
+  --secondary-purple: #A29BFE;
+  --accent-green: #00B894;
+  --secondary-green: #55EFC4;
+  --cancel-red: #D32F2F;
+  --cancel-red-secondary: #FF5722;
+}
+
+/* ===== Base ===== */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #f8f6ff, #ede9fe);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+}
+
+/* ===== Card ===== */
+#verification-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(108, 92, 231, 0.2);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 0.4s ease-in;
+  margin: 20px 0;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Header ===== */
+h1 {
+  color: var(--primary-purple);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+h2 {
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+hr {
+  width: 100%;
+  border: none;
+  height: 1px;
+  background: #eee;
+  margin: 1rem 0;
+}
+
+/* ===== Camera Canvas ===== */
+#camera-canvas {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background-color: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ===== Status Text ===== */
+#status-text {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+  min-height: 20px;
+}
+
+/* ===== Buttons ===== */
+.btn-container {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+button {
+  flex: 1;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.9rem;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+#verify-btn {
+  background: linear-gradient(135deg, var(--primary-purple), var(--secondary-purple));
+}
+
+#submit-btn {
+  background: linear-gradient(135deg, var(--accent-green), var(--secondary-green));
+}
+
+#cancel-btn {
+  width: 100%;
+  margin-top: 0.8rem;
+  background: linear-gradient(135deg, var(--cancel-red), var(--cancel-red-secondary));
+}
+
+button:hover:not(:disabled) {
+  transform: scale(1.03);
+  box-shadow: 0 5px 15px rgba(108,92,231,0.25);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Loader ===== */
+.loader {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--primary-purple);
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  animation: spin 0.8s linear infinite;
+  margin-top: 15px;
+  display: none;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Modal Popup ===== */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: #fff;
+  padding: 1.5rem 2rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(108, 92, 231, 0.25);
+  text-align: center;
+  opacity: 0;
+  z-index: 9999;
+  width: 80%;
+  max-width: 300px;
+  transition: all 0.3s ease;
+}
+.modal.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.modal h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+.modal p {
+  font-size: 0.9rem;
+  color: #555;
+}
+.modal.success h3 { color: var(--accent-green); }
+.modal.error h3 { color: var(--cancel-red); }
+
+/* ===== Footer ===== */
+.footer {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 1.2rem;
+}
+.footer span {
+  color: var(--primary-purple);
+  font-weight: 600;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 480px) {
+  #verification-card {
+    padding: 1.5rem;
+  }
+  .btn-container {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  button {
+    width: 100%;
+  }
+  #camera-canvas {
+    aspect-ratio: 4/3;
+  }
+}
+</style>
+
+<div id="verification-card">
+  <h1>Confirm Presence</h1>
+  <h2>{{ user.username }}</h2>
+  <hr>
+
+  <div id="camera-canvas">
+      <canvas id="video-canvas" width="400" height="300" style="border-radius:12px;"></canvas>
+  </div>
+
+  <p id="status-text">{{ today_status }}</p>
+  <div class="loader" id="loader"></div>
+
+  <div class="btn-container">
+      <button id="verify-btn" {% if disable_verify %}disabled{% endif %}>  Verify</button>
+      <button id="submit-btn" disabled>Submit</button>
+  </div>
+
+  <form action="{% url 'userdash' %}" method="post" style="width:100%;">
+      {% csrf_token %}
+      <button id="cancel-btn" onclick="return confirm('Are you sure to cancel?')">
+          <span id="cancelTxt">Cancel Session</span>
+      </button>
+  </form>
+
+  {% if pending_face %}
+  <div style="margin-top: 1rem;">
+      <h3>
+          {% if face_status == "Rejected" %}
+              Previous Face Update:
+          {% else %}
+              Pending Face (Awaiting Admin Approval):
+          {% endif %}
+      </h3>
+      <img src="{{ new_face_url }}" alt="Pending Face" 
+           style="width:100%; border-radius:12px; border:2px solid {% if face_status == 'Rejected' %}red{% else %}orange{% endif %};">
+      <p style="font-weight:bold; color:{% if face_status == 'Rejected' %}red{% else %}orange{% endif %};">
+          {% if face_status == "Rejected" %}
+                Your previous image update got rejected.
+          {% else %}
+              Pending Approval
+          {% endif %}
+      </p>
+  </div>
+  {% endif %}
+
+  <p class="footer">Powered by <span>DeepFace (SFace)</span></p>
+</div>
+
+<!-- Modal Popup -->
+<div id="modal" class="modal">
+  <h3></h3>
+  <p></p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const videoCanvas = document.getElementById('video-canvas');
+  const ctx = videoCanvas.getContext('2d');
+  const video = document.createElement('video');
+  const loader = document.getElementById('loader');
+  const statusText = document.getElementById('status-text');
+  const verifyBtn = document.getElementById('verify-btn');
+  const submitBtn = document.getElementById('submit-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const cancelTxt = document.getElementById('cancelTxt');
+  const modal = document.getElementById('modal');
+
+  // Show modal popup
+  function showModal(title, msg, type = "success") {
+    modal.classList.remove("success", "error");
+    modal.classList.add(type, "show");
+    modal.querySelector("h3").textContent = title;
+    modal.querySelector("p").textContent = msg;
+    setTimeout(() => modal.classList.remove("show"), 3000);
+  }
+
+  // Init camera
+  async function initCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      video.srcObject = stream;
+      await video.play();
+      videoCanvas.width = video.videoWidth;
+      videoCanvas.height = video.videoHeight;
+      requestAnimationFrame(drawVideoFrame);
+    } catch (err) {
+      statusText.textContent = "Cannot access webcam";
+      statusText.style.color = "red";
+    }
+  }
+
+  function drawVideoFrame() {
+    ctx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+    const boxSize = Math.min(videoCanvas.width, videoCanvas.height) / 3;
+    ctx.strokeStyle = '#6C5CE7';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(videoCanvas.width/2 - boxSize/2, videoCanvas.height/2 - boxSize/2, boxSize, boxSize);
+    requestAnimationFrame(drawVideoFrame);
+  }
+
+  function getCroppedFace() {
+    const boxSize = Math.min(videoCanvas.width, videoCanvas.height) / 3;
+    const x = videoCanvas.width/2 - boxSize/2;
+    const y = videoCanvas.height/2 - boxSize/2;
+    const faceCanvas = document.createElement('canvas');
+    faceCanvas.width = boxSize;
+    faceCanvas.height = boxSize;
+    faceCanvas.getContext('2d').drawImage(videoCanvas, x, y, boxSize, boxSize, 0, 0, boxSize, boxSize);
+    return faceCanvas.toDataURL('image/jpeg', 0.9);
+  }
+
+  async function sendFrameToServer(imageData) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const response = await fetch("{% url 'mark_attendance' %}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+      body: JSON.stringify({ image_data: imageData })
+    });
+    return await response.json();
+  }
+
+  // Verify button click
+  verifyBtn.addEventListener('click', async () => {
+    loader.style.display = "block";
+    statusText.textContent = "Verifying your face...";
+    verifyBtn.disabled = true;
+
+    const imageData = getCroppedFace();
+    const result = await sendFrameToServer(imageData);
+    loader.style.display = "none";
+
+    if (result.status === "success") {
+      showModal("  Verified!", `Welcome, ${result.username}!`, "success");
+      statusText.textContent = "  Attendance verified successfully!";
+      statusText.style.color = "green";
+      submitBtn.disabled = false;
+
+      cancelTxt.textContent = "⬅ Back to Dashboard";
+      cancelBtn.onclick = () => { window.location.href = "{% url 'userdash' %}"; return false; };
+    } else {
+      showModal("  Error", result.message || "Face not recognized. Try again.", "error");
+      statusText.textContent = "  Face not recognized. Try again.";
+      statusText.style.color = "red";
+      verifyBtn.disabled = false;
+    }
+  });
+
+  submitBtn.addEventListener('click', () => {
+    showModal("  Submitted", "Attendance marked successfully!", "success");
+    statusText.textContent = "  Attendance marked!";
+    verifyBtn.disabled = true;
+    submitBtn.disabled = true;
+  });
+
+  initCamera();
+});
+</script>
+{% endblock %}

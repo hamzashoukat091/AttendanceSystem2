@@ -1,0 +1,928 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}AttendEase | User Profile{% endblock %}
+{% block content %}
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+  /* ====== CSS Variables ====== */
+  :root {
+    --primary-purple: #6C5CE7;
+    --accent-purple: #9C27B0;
+    --bg-light: #F7F8FA;
+    --card-bg: #FFFFFF;
+    --text-dark: #1F2937;
+    --text-gray: #6B7280;
+    --text-light: #9CA3AF;
+    --success: #10B981;
+    --error: #EF4444;
+    --warning: #F59E0B;
+    --info: #2563EB;
+    --border-light: #E5E7EB;
+    --shadow-sm: 0 2px 8px rgba(108, 92, 231, 0.1);
+    --shadow-md: 0 8px 16px rgba(108, 92, 231, 0.15);
+    --shadow-lg: 0 12px 30px rgba(108, 92, 231, 0.2);
+  }
+
+  /* ====== Reset & Base Styles ====== */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: all 0.25s ease;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #f8f6ff 0%, #ede9fe 100%);
+    margin: 0;
+    padding: clamp(1rem, 5vw, 2rem);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    line-height: 1.6;
+    color: var(--text-dark);
+  }
+
+  /* ====== Go Back Button ====== */
+  .go-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: clamp(0.6rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.25rem);
+    border-radius: 50px;
+    border: none;
+    font-weight: 600;
+    font-size: clamp(0.8rem, 2vw, 0.95rem);
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--primary-purple), var(--accent-purple));
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .go-back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .go-back-btn:active {
+    transform: translateY(0);
+  }
+
+  .go-back-btn svg {
+    width: clamp(18px, 4vw, 22px);
+    height: clamp(18px, 4vw, 22px);
+  }
+
+  /* ====== Main Profile Container ====== */
+  .profile-container {
+    background: var(--card-bg);
+    max-width: 1100px;
+    width: 100%;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    padding: clamp(1.5rem, 5vw, 3rem);
+    animation: fadeIn 0.4s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* ====== Main Title ====== */
+  .profile-container > h1 {
+    text-align: center;
+    font-size: clamp(1.75rem, 6vw, 2.25rem);
+    font-weight: 700;
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+    color: var(--text-dark);
+    letter-spacing: -0.5px;
+  }
+
+  /* ====== Profile Header Section ====== */
+  .profile-header {
+    text-align: center;
+    border-bottom: 2px solid var(--border-light);
+    padding-bottom: clamp(1rem, 4vw, 1.5rem);
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .avatar-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .avatar {
+    width: clamp(80px, 20vw, 140px);
+    height: clamp(80px, 20vw, 140px);
+    border-radius: 50%;
+    border: 4px solid var(--primary-purple);
+    box-shadow: var(--shadow-md);
+    object-fit: cover;
+    background: var(--bg-light);
+  }
+
+  .profile-name {
+    font-size: clamp(1.25rem, 4vw, 1.6rem);
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: clamp(0.75rem, 2vw, 1rem) 0 0.3rem;
+  }
+
+  .profile-email {
+    color: var(--text-gray);
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    margin: 0;
+  }
+
+  /* ====== Main Content Grid ====== */
+  .main-content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  /* ====== Card Section ====== */
+  .card-section {
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    border-radius: 12px;
+    border: 1px solid var(--border-light);
+    padding: clamp(1.25rem, 4vw, 1.75rem);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+  }
+
+  .card-section:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--primary-purple);
+  }
+
+  /* ====== Section Title ====== */
+  .section-title {
+    font-size: clamp(1.1rem, 3vw, 1.35rem);
+    font-weight: 700;
+    color: var(--primary-purple);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: clamp(0.75rem, 2vw, 1.25rem);
+  }
+
+  .section-title i {
+    width: clamp(18px, 4vw, 24px);
+    height: clamp(18px, 4vw, 24px);
+    flex-shrink: 0;
+  }
+
+  /* ====== Form Groups ====== */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    font-size: clamp(0.8rem, 2vw, 0.95rem);
+    color: var(--text-dark);
+    display: block;
+  }
+
+  .form-group p {
+    font-size: 0.75rem;
+    color: var(--text-gray);
+    margin: 0;
+  }
+
+  .form-group.password-group {
+    position: relative;
+  }
+
+  /* ====== Form Inputs ====== */
+  .form-input {
+    width: 100%;
+    padding: clamp(0.6rem, 2vw, 0.85rem) clamp(0.75rem, 2vw, 1rem);
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    background: #fff;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    font-family: inherit;
+    color: var(--text-dark);
+    transition: all 0.2s ease;
+  }
+
+  .form-input:focus {
+    border-color: var(--primary-purple);
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+    outline: none;
+  }
+
+  .form-input:hover:not(.readonly) {
+    border-color: var(--primary-purple);
+  }
+
+  .form-input.readonly {
+    background: var(--bg-light);
+    color: var(--text-light);
+    cursor: not-allowed;
+  }
+
+  .form-input.readonly:focus {
+    box-shadow: none;
+    border-color: var(--border-light);
+  }
+
+  /* ====== Input Validation ====== */
+  .input-validation {
+    font-size: 0.8rem;
+    color: var(--error);
+    margin-top: 0.25rem;
+    display: none;
+  }
+
+  .input-validation.show {
+    display: block;
+  }
+
+  /* ====== Password Toggle Button ====== */
+  .password-toggle-btn {
+    position: absolute;
+    right: clamp(0.5rem, 2vw, 0.75rem);
+    top: 2.1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-gray);
+    transition: color 0.2s ease;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .password-toggle-btn:hover {
+    color: var(--primary-purple);
+  }
+
+  .password-toggle-btn i {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* ====== Buttons (Save/Submit) ====== */
+  .save-btn,
+  .submit-btn {
+    background: linear-gradient(135deg, var(--primary-purple), var(--accent-purple));
+    color: white;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    padding: clamp(0.7rem, 2vw, 0.95rem) clamp(1rem, 3vw, 1.5rem);
+    width: 100%;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: clamp(0.8rem, 2vw, 0.95rem);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+  }
+
+  .save-btn:hover,
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .save-btn:active,
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  .save-btn:disabled,
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ====== Action Cards ====== */
+  .action-card {
+    background: #fff;
+    border: 2px solid var(--border-light);
+    border-radius: 10px;
+    padding: clamp(1rem, 3vw, 1.25rem);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .action-card:hover {
+    border-color: var(--primary-purple);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .action-card:active {
+    transform: translateY(-1px);
+  }
+
+  .card-content {
+    text-align: left;
+    flex: 1;
+  }
+
+  .card-content h3 {
+    font-size: clamp(1rem, 3vw, 1.1rem);
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.25rem;
+  }
+
+  .card-content p {
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    color: var(--text-gray);
+    margin: 0;
+  }
+
+  .card-icon {
+    color: var(--primary-purple);
+    width: clamp(24px, 5vw, 32px);
+    height: clamp(24px, 5vw, 32px);
+    flex-shrink: 0;
+  }
+
+  /* ====== Toast Notifications ====== */
+  .toast {
+    position: fixed;
+    top: clamp(1rem, 5vw, 2rem);
+    right: -400px;
+    min-width: clamp(250px, 85vw, 350px);
+    padding: clamp(1rem, 2vw, 1.25rem) clamp(1.25rem, 3vw, 1.5rem);
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transition: all 0.4s ease;
+    z-index: 1000;
+  }
+
+  .toast.show {
+    right: clamp(1rem, 5vw, 2rem);
+    opacity: 1;
+  }
+
+  .toast-success {
+    background: linear-gradient(135deg, var(--success), #059669);
+  }
+
+  .toast-error {
+    background: linear-gradient(135deg, var(--error), #dc2626);
+  }
+
+  .toast-info {
+    background: linear-gradient(135deg, var(--info), #1d4ed8);
+  }
+
+  .toast-warning {
+    background: linear-gradient(135deg, var(--warning), #d97706);
+  }
+
+  /* ====== Loader ====== */
+  .video {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    z-index: 9999;
+    padding: 2rem;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .video video {
+    width: clamp(100px, 50vw, 150px);
+    height: auto;
+    border-radius: 10px;
+  }
+
+  /* ====== Responsive Design ====== */
+
+  /* Mobile First (320px - 480px) */
+  @media (max-width: 480px) {
+    body {
+      padding: 0.75rem;
+    }
+
+    .profile-container {
+      padding: 1.25rem;
+      border-radius: 12px;
+    }
+
+    .go-back-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .main-content-grid {
+      gap: 1.5rem;
+    }
+
+    .card-section {
+      padding: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+    }
+
+    .action-card {
+      flex-direction: column;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .card-content {
+      text-align: center;
+    }
+
+    .card-content h3 {
+      font-size: 1rem;
+    }
+
+    .card-content p {
+      font-size: 0.8rem;
+    }
+
+    form {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 1rem !important;
+    }
+  }
+
+  /* Small Tablets (481px - 768px) */
+  @media (min-width: 481px) and (max-width: 768px) {
+    body {
+      padding: 1rem;
+    }
+
+    .profile-container {
+      padding: 1.5rem;
+    }
+
+    .go-back-btn {
+      margin-bottom: 1.25rem;
+    }
+
+    .main-content-grid {
+      gap: 1.75rem;
+    }
+
+    .card-section {
+      padding: 1.25rem;
+    }
+
+    .action-card {
+      padding: 1.15rem;
+    }
+
+    form {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 1rem !important;
+    }
+  }
+
+  /* Tablets & Medium Screens (769px - 1024px) */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .profile-container {
+      padding: 2rem;
+    }
+
+    .main-content-grid {
+      gap: 2rem;
+    }
+
+    .card-section {
+      padding: 1.5rem;
+    }
+  }
+
+  /* Large Screens (1025px+) */
+  @media (min-width: 1025px) {
+    body {
+      padding: 2rem;
+    }
+
+    .profile-container {
+      padding: 3rem;
+    }
+
+    .main-content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2.5rem;
+    }
+
+    .action-cards-column {
+      grid-column: 2 / 3;
+      grid-row: 1 / 3;
+    }
+
+    .lg-col-span-1 {
+      grid-column: 1 / 2;
+    }
+
+    .lg-col-span-2 {
+      grid-column: 1 / 2;
+    }
+
+    .card-section {
+      padding: 1.75rem;
+    }
+
+    .save-btn,
+    .submit-btn {
+      width: auto;
+      align-self: flex-start;
+    }
+  }
+
+  /* ====== Landscape Mode ====== */
+  @media (max-height: 600px) {
+    body {
+      padding: 1rem;
+    }
+
+    .profile-container {
+      padding: 1.5rem;
+    }
+
+    .profile-header {
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+    }
+
+    .card-section {
+      padding: 1rem;
+    }
+
+    .main-content-grid {
+      gap: 1.5rem;
+    }
+  }
+
+  /* ====== Print Styles ====== */
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+    }
+
+    .go-back-btn,
+    .save-btn,
+    .submit-btn,
+    .action-card {
+      display: none;
+    }
+
+    .profile-container {
+      box-shadow: none;
+      border: 1px solid #ddd;
+    }
+  }
+</style>
+
+<button class="go-back-btn" onclick="window.location.href='{% url 'userdash' %}'">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M44 40.836c-4.893-5.973-9.238-9.362-13.036-10.168c-3.797-.805-7.412-.927-10.846-.365V41L4 23.545L20.118 7v10.167c6.349.05 11.746 2.328 16.192 6.833c4.445 4.505 7.009 10.117 7.69 16.836Z"/>
+  </svg>
+  Back to Dashboard
+</button>
+
+<!-- Main Profile Container -->
+<div class="profile-container">
+  <h1>User Profile & Settings</h1>
+
+  <!-- Profile Header Section -->
+  <div class="profile-header">
+    <div class="avatar-wrapper">
+      <img id="user-avatar" src="{% static 'icons8-test-account.gif' %}" alt="User Avatar" class="avatar">
+    </div>
+    <p id="profile-name" class="profile-name">{{ user.username }} ({{ user.user_type }})</p>
+    <p id="profile-email" class="profile-email">{{ user.email }}</p>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="main-content-grid">
+
+    <!-- Left Column: Basic Info & Security -->
+    <div class="lg-col-span-2">
+
+      <!-- Basic Information Update Form -->
+      <div class="card-section">
+        <h2 class="section-title">
+          <svg data-lucide="user"></svg>
+          Basic Information
+        </h2>
+        <form id="profile-form" method="post">
+          {% csrf_token %}
+
+          <!-- Full Name -->
+          <div class="form-group">
+            <label for="fullName">Full Name</label>
+            <input type="text" id="fullName" name="fullName" class="form-input" placeholder="Enter your full name" required>
+            <p id="fullName-validation" class="input-validation"></p>
+          </div>
+
+          <!-- Email (Read-only) -->
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-input readonly" readonly>
+            <p>Contact Admin to change your primary email address.</p>
+          </div>
+
+          <!-- Phone Number -->
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number</label>
+            <input type="tel" id="phoneNumber" name="phoneNumber" class="form-input" placeholder="e.g., (123) 456-7890">
+          </div>
+
+          <!-- Current Password -->
+          <div class="form-group password-group">
+            <label for="currentPassword">Current Password</label>
+            <input type="password" id="currentPassword" name="currentPassword" class="form-input" placeholder="••••••••" required>
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('currentPassword', 'toggle-current')">
+              <svg id="toggle-current" data-lucide="eye"></svg>
+            </button>
+          </div>
+
+          <!-- Save Button -->
+          {% comment %} <button type="submit" class="save-btn">Save Changes</button> {% endcomment %}
+        </form>
+      </div>
+
+      <!-- Security Preferences Section -->
+      <div class="card-section">
+        <h2 class="section-title">
+          <svg data-lucide="lock"></svg>
+          Security Preferences
+        </h2>
+
+        <!-- Change Password -->
+        <div>
+          <h3 style="font-weight: 600; color: var(--text-dark); margin-bottom: 1rem; font-size: 1.05rem;">Change Password</h3>
+
+          <form id="password-form" method="post" action="{% url 'change_password' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+              <label for="newPassword">New Password</label>
+              <input type="password" id="newPassword" name="newPassword" class="form-input" placeholder="Enter new password" required>
+              <p id="newPassword-validation" class="input-validation">Password must be at least 8 characters long.</p>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmNewPassword">Confirm New Password</label>
+              <input type="password" id="confirmNewPassword" name="confirmNewPassword" class="form-input" placeholder="Confirm new password" required>
+              <p id="confirmNewPassword-validation" class="input-validation">Passwords do not match.</p>
+            </div>
+
+            <button type="submit" class="submit-btn">Update Password</button>
+          </form>
+
+          {% if messages %}
+            <div id="toast-container">
+              {% for message in messages %}
+                <div class="toast toast-{{ message.tags|default:'info' }}">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Action Cards -->
+    <div class="action-cards-column">
+      <h2 class="section-title">
+        <svg data-lucide="zap"></svg>
+        Quick Actions
+      </h2>
+
+      <!-- Face ADD -->
+      <button class="action-card" onclick="window.location.href='{% url 'face_add' %}'">
+        <div class="card-content">
+          <h3>Face ADD</h3>
+          <p>Enroll your face for recognition.</p>
+        </div>
+        <svg data-lucide="user-plus" class="card-icon"></svg>
+      </button>
+
+      <!-- Take Attendance -->
+      <button class="action-card" onclick="window.location.href='{% url 'face_scan' %}'">
+        <div class="card-content">
+          <h3>Take Attendance</h3>
+          <p>Quickly log your attendance now.</p>
+        </div>
+        <svg data-lucide="clock" class="card-icon"></svg>
+      </button>
+
+      <!-- View Face Data -->
+      <button class="action-card" onclick="window.location.href='{% url 'face_view' %}'">
+        <div class="card-content">
+          <h3>View Face Data</h3>
+          <p>Review your registered face map.</p>
+        </div>
+        <svg data-lucide="eye" class="card-icon"></svg>
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Loader -->
+<div id="load" class="video">
+  <video
+    style="width: 130px; height: auto; border-radius: 10px;"
+    src="{% static 'Untitled video - Made with Clipchamp (2) (online-video-cutter.com).mp4' %}"
+    autoplay
+    loop
+    muted>
+  </video>
+</div>
+
+<script>
+  // ====== Initialize ======
+  document.addEventListener("DOMContentLoaded", () => {
+    lucide.createIcons();
+    setupUI();
+    setupEventListeners();
+  });
+
+  // ====== Setup UI ======
+  const setupUI = () => {
+    // Populate form fields with user data
+    const userData = {
+      fullName: "{{ user.first_name }} {{ user.last_name }}".trim() || "{{ user.username }}",
+      email: "{{ user.email }}",
+      phoneNumber: localStorage.getItem('phoneNumber') || ""
+    };
+
+    document.getElementById('profile-name').textContent = `${userData.fullName} ({{ user.user_type }})`;
+    document.getElementById('profile-email').textContent = userData.email;
+    document.getElementById('fullName').value = userData.fullName;
+    document.getElementById('email').value = userData.email;
+    document.getElementById('phoneNumber').value = userData.phoneNumber;
+  };
+
+  // ====== Event Listeners ======
+  const setupEventListeners = () => {
+    // Show toasts
+    const toasts = document.querySelectorAll(".toast");
+    toasts.forEach((toast, index) => {
+      setTimeout(() => {
+        toast.classList.add("show");
+      }, index * 200);
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3500 + index * 200);
+    });
+
+    // Show loader on form submit
+    document.querySelectorAll("form").forEach(form => {
+      form.addEventListener("submit", () => {
+        document.getElementById("load").style.display = "flex";
+      });
+    });
+
+    // Hide loader after page load
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        document.getElementById("load").style.display = "none";
+      }, 1000);
+    });
+
+    // Password form validation
+    const passwordForm = document.getElementById("password-form");
+    if (passwordForm) {
+      passwordForm.addEventListener("submit", handlePasswordFormSubmit);
+    }
+
+    // Profile form submission
+    const profileForm = document.getElementById("profile-form");
+    if (profileForm) {
+      profileForm.addEventListener("submit", handleProfileFormSubmit);
+    }
+  };
+
+  // ====== Toggle Password Visibility ======
+  function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+
+    if (!input) return;
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (icon) icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+      input.type = 'password';
+      if (icon) icon.setAttribute('data-lucide', 'eye');
+    }
+
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  }
+
+  // ====== Handle Password Form Submit ======
+  function handlePasswordFormSubmit(e) {
+    const newPassword = document.getElementById("newPassword").value.trim();
+    const confirmPassword = document.getElementById("confirmNewPassword").value.trim();
+    let valid = true;
+
+    // Validate length
+    if (newPassword.length < 8) {
+      document.getElementById("newPassword-validation").classList.add("show");
+      valid = false;
+    } else {
+      document.getElementById("newPassword-validation").classList.remove("show");
+    }
+
+    // Validate match
+    if (newPassword !== confirmPassword) {
+      document.getElementById("confirmNewPassword-validation").classList.add("show");
+      valid = false;
+    } else {
+      document.getElementById("confirmNewPassword-validation").classList.remove("show");
+    }
+
+    if (!valid) {
+      e.preventDefault();
+    }
+  }
+
+  // ====== Handle Profile Form Submit ======
+  function handleProfileFormSubmit(e) {
+    const fullName = document.getElementById("fullName").value.trim();
+    const phoneNumber = document.getElementById("phoneNumber").value.trim();
+
+    if (!fullName) {
+      document.getElementById("fullName-validation").classList.add("show");
+      document.getElementById("fullName-validation").textContent = "Full name is required.";
+      e.preventDefault();
+      return;
+    }
+
+    // Save phone number to localStorage
+    if (phoneNumber) {
+      localStorage.setItem('phoneNumber', phoneNumber);
+    }
+  }
+</script>
+
+{% endblock %}

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Face - {{ user.username }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .back-btn {
+            padding: 8px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .back-btn:hover {
+            background: #5568d3;
+        }
+        
+        .user-info {
+            text-align: center;
+        }
+        
+        .user-info h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        
+        .user-info p {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .camera-container {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .progress-section {
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 35px;
+            background: #e0e0e0;
+            border-radius: 17px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        #messageBox {
+            min-height: 20px;
+        }
+        
+        .video-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            position: absolute;
+        }
+        
+        #overlay {
+            position: absolute;
+            transform: scaleX(-1);
+        }
+        
+        .position-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 10;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            animation: pulseGuide 1s infinite;
+        }
+        
+        @keyframes pulseGuide {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+        
+        .face-detected {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(67, 233, 123, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
+        .face-not-detected {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 59, 48, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 35px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .btn-capture {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-capture:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+        
+        .btn-capture:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-done {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        
+        .btn-done:hover {
+            transform: scale(1.05);
+        }
+        
+        .sidebar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            max-height: calc(100vh - 100px);
+        }
+        
+        .instructions {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border-left: 4px solid #ffc107;
+        }
+        
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .instructions ul {
+            margin-left: 18px;
+            color: #666;
+        }
+        
+        .instructions li {
+            margin: 8px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .tips {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .tips h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .tips p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+        
+        .message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 14px;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        canvas {
+            display: none;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="{% url 'select_user_registration' %}" class="back-btn">← Back</a>
+        <div class="user-info">
+            <h2>👤 {{ user.username }}</h2>
+            <p>{{ user.email }}</p>
+        </div>
+        <div style="width: 80px;"></div>
+    </div>
+    
+    <div class="main-content">
+        <div class="camera-container">
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: {{ current_count }}%">
+                        <span id="progressText">{{ current_count }}/{{ required_count }}</span>
+                    </div>
+                </div>
+                <div id="messageBox"></div>
+            </div>
+            
+            <div class="video-wrapper">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="overlay"></canvas>
+                <canvas id="canvas"></canvas>
+                <div id="detectionIndicator"></div>
+                <div id="positionGuide" class="position-guide" style="display:none;"></div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn-capture" id="startBtn">▶️ Start Auto Capture</button>
+                <button class="btn-capture" id="stopBtn" style="display:none; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);">⏸️ Stop Capture</button>
+                <button class="btn-done" id="doneBtn" style="display:none;">✓ Done</button>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <div class="instructions">
+                <h3>📋 Instructions</h3>
+                <ul>
+                    <li>Click "Start Auto Capture" to begin</li>
+                    <li>System will automatically detect your face</li>
+                    <li>Follow position guides as they appear</li>
+                    <li>Stay still when capturing</li>
+                    <li>25 images will be captured automatically</li>
+                </ul>
+            </div>
+            
+            <div class="tips">
+                <h3>💡 Position Guides</h3>
+                <p><strong>Images 1-5:</strong> Look straight ahead (Front)</p>
+                <p><strong>Images 6-10:</strong> Look up slightly</p>
+                <p><strong>Images 11-15:</strong> Look down slightly</p>
+                <p><strong>Images 16-20:</strong> Turn head left</p>
+                <p><strong>Images 21-25:</strong> Turn head right</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const overlay = document.getElementById('overlay');
+        const ctx = canvas.getContext('2d');
+        const overlayCtx = overlay.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const doneBtn = document.getElementById('doneBtn');
+        const messageBox = document.getElementById('messageBox');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const detectionIndicator = document.getElementById('detectionIndicator');
+        const positionGuide = document.getElementById('positionGuide');
+        
+        let currentCount = {{ current_count }};
+        const requiredCount = {{ required_count }};
+        const userId = {{ user.id }};
+        let isCapturing = false;
+        let faceDetected = false;
+        let modelsLoaded = false;
+        
+        // Position guides for every 5 images
+        const positionGuides = {
+            0: { text: '👤 Look Straight Ahead', range: '1-5' },
+            5: { text: '⬆️ Look Up Slightly', range: '6-10' },
+            10: { text: '⬇️ Look Down Slightly', range: '11-15' },
+            15: { text: '⬅️ Turn Head Left', range: '16-20' },
+            20: { text: '➡️ Turn Head Right', range: '21-25' }
+        };
+        
+        // Load face-api.js models
+        async function loadModels() {
+            try {
+                showMessage('Loading face detection models...', 'success');
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
+                ]);
+                
+                modelsLoaded = true;
+                showMessage('Face detection ready!', 'success');
+            } catch (err) {
+                showMessage('Error loading models: ' + err.message, 'error');
+                console.error(err);
+            }
+        }
+        
+        // Start camera
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 } 
+                });
+                video.srcObject = stream;
+                
+                video.addEventListener('loadedmetadata', () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    overlay.width = video.videoWidth;
+                    overlay.height = video.videoHeight;
+                });
+                
+                showMessage('Camera started successfully', 'success');
+            } catch (err) {
+                showMessage('Error accessing camera: ' + err.message, 'error');
+            }
+        }
+        
+        // Detect face in video
+        async function detectFace() {
+            if (!modelsLoaded || !video.videoWidth) return null;
+            
+            try {
+                const detection = await faceapi.detectSingleFace(
+                    video, 
+                    new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+                ).withFaceLandmarks();
+                
+                return detection;
+            } catch (err) {
+                console.error('Detection error:', err);
+                return null;
+            }
+        }
+        
+        // Draw detection box
+        function drawDetection(detection) {
+            overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
+            
+            if (detection) {
+                const box = detection.detection.box;
+                overlayCtx.strokeStyle = '#43e97b';
+                overlayCtx.lineWidth = 3;
+                overlayCtx.strokeRect(box.x, box.y, box.width, box.height);
+                
+                // Draw landmarks
+                const landmarks = detection.landmarks.positions;
+                overlayCtx.fillStyle = '#43e97b';
+                landmarks.forEach(point => {
+                    overlayCtx.beginPath();
+                    overlayCtx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+                    overlayCtx.fill();
+                });
+            }
+        }
+        
+        // Continuous face detection loop
+        async function detectionLoop() {
+            const detection = await detectFace();
+            
+            if (detection) {
+                faceDetected = true;
+                detectionIndicator.className = 'face-detected';
+                detectionIndicator.textContent = '✓ Face Detected';
+                drawDetection(detection);
+            } else {
+                faceDetected = false;
+                detectionIndicator.className = 'face-not-detected';
+                detectionIndicator.textContent = '✗ No Face Detected';
+                overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
+            }
+            
+            requestAnimationFrame(detectionLoop);
+        }
+        
+        // Show message
+        function showMessage(text, type) {
+            messageBox.innerHTML = `<div class="message ${type}">${text}</div>`;
+            setTimeout(() => {
+                if (messageBox.innerHTML.includes(text)) {
+                    messageBox.innerHTML = '';
+                }
+            }, 3000);
+        }
+        
+        // Update progress
+        function updateProgress() {
+            const percentage = Math.min((currentCount / requiredCount) * 100, 100);
+            progressFill.style.width = percentage + '%';
+            progressText.textContent = `${currentCount}/${requiredCount}`;
+            
+            if (currentCount >= requiredCount) {
+                stopCapture();
+                doneBtn.style.display = 'inline-block';
+                showMessage('✓ All images captured! Click Done to finish.', 'success');
+            }
+        }
+        
+        // Show position guide
+        function showPositionGuide() {
+            const guideKey = Math.floor(currentCount / 5) * 5;
+            const guide = positionGuides[guideKey];
+            
+            if (guide && currentCount % 5 === 0) {
+                positionGuide.innerHTML = `${guide.text}<br><small>Images ${guide.range}</small>`;
+                positionGuide.style.display = 'block';
+                
+                setTimeout(() => {
+                    positionGuide.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // Capture and save image
+        async function captureImage() {
+            if (!faceDetected) {
+                return;
+            }
+            
+            // Draw video frame to canvas
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            // Get image data
+            const imageData = canvas.toDataURL('image/jpeg', 0.9);
+            
+            try {
+                const response = await fetch('{% url "save_face_image" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        image: imageData
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentCount = result.count;
+                    updateProgress();
+                    showMessage(`✓ Image ${currentCount} captured!`, 'success');
+                    showPositionGuide();
+                } else {
+                    showMessage('Error: ' + result.error, 'error');
+                }
+            } catch (err) {
+                showMessage('Network error: ' + err.message, 'error');
+            }
+        }
+        
+        // Auto capture loop
+        let captureInterval;
+        function startAutoCapture() {
+            if (!modelsLoaded) {
+                showMessage('Please wait for models to load', 'error');
+                return;
+            }
+            
+            isCapturing = true;
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            showMessage('Auto-capture started. Position your face!', 'success');
+            showPositionGuide();
+            
+            // Capture every 2 seconds when face is detected
+            captureInterval = setInterval(async () => {
+                if (faceDetected && currentCount < requiredCount) {
+                    await captureImage();
+                }
+            }, 2000);
+        }
+        
+        function stopCapture() {
+            isCapturing = false;
+            clearInterval(captureInterval);
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            showMessage('Auto-capture stopped', 'success');
+        }
+        
+        // Start button
+        startBtn.addEventListener('click', startAutoCapture);
+        
+        // Stop button
+        stopBtn.addEventListener('click', stopCapture);
+        
+        // Done button
+        doneBtn.addEventListener('click', function() {
+            if (confirm('Are you done with face registration?')) {
+                window.location.href = '{% url "select_user_registration" %}';
+            }
+        });
+        
+        // Initialize - wait for face-api to load
+        async function init() {
+            // Check if face-api is loaded
+            if (typeof faceapi === 'undefined') {
+                showMessage('Loading face detection library...', 'success');
+                // Wait for face-api to load
+                let attempts = 0;
+                while (typeof faceapi === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (typeof faceapi === 'undefined') {
+                    showMessage('Error: Face detection library failed to load', 'error');
+                    return;
+                }
+            }
+            
+            await loadModels();
+            await startCamera();
+            updateProgress();
+            
+            // Start detection loop after camera is ready
+            setTimeout(() => {
+                detectionLoop();
+            }, 1000);
+        }
+        
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

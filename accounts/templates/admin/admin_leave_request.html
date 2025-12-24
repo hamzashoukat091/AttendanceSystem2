@@ -1,0 +1,43 @@
+{% extends "base_site.html" %}
+{% block content %}
+<h2>Admin - Leave Requests</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Date Range</th>
+      <th>Type</th>
+      <th>Reason</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for leave in leaves %}
+      <tr>
+        <td>{{ leave.user.username }}</td>
+        <td>{{ leave.start_date }} → {{ leave.end_date }}</td>
+        <td>{{ leave.leave_type }}</td>
+        <td>{{ leave.reason|truncatechars:30 }}</td>
+        <td>
+          {% if leave.status == "Pending" %}
+            <span class="badge bg-warning">Pending</span>
+          {% elif leave.status == "Approved" %}
+            <span class="badge bg-success">Approved</span>
+          {% else %}
+            <span class="badge bg-danger">Rejected</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'update_leave_status' leave.id 'Approved' %}" class="btn btn-success btn-sm">Approve</a>
+          <a href="{% url 'update_leave_status' leave.id 'Rejected' %}" class="btn btn-danger btn-sm">Reject</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">No leave requests found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+{%endblock%}

@@ -1,0 +1,101 @@
+# ===============================
+# ⚙️ Django / Python Ignore Rules
+# ==============================
+accounts/migrations
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.md
+
+# SQLite database
+db.sqlite3
+
+# Environment variables
+.env
+*.env
+
+# Static and media files (generated or uploaded)
+staticfiles/
+media/
+*.log
+
+# Local settings and secrets
+settings_local.py
+
+# ===============================
+# 🧠 DeepFace / Model Files
+# ===============================
+# Deep learning model weights (large files)
+*.h5
+*.hdf5
+*.pkl
+*.bin
+*.pt
+*.onnx
+
+# DeepFace model folders
+deepface_models/
+accounts/media/deepface_models/
+models/
+weights/
+checkpoints/
+
+# ===============================
+# 🖼️ Face Images / Captured Data
+# ===============================
+# Prevent uploading user face data
+accounts/media/faces/
+accounts/media/uploads/
+dataset/
+train_data/
+test_data/
+*.jpg
+*.jpeg
+*.png
+
+# ===============================
+# 🧰 Virtual Environment
+# ===============================
+venv/
+env/
+ENV/
+.venv/
+Scripts/
+Lib/
+Include/
+pyvenv.cfg
+
+# ===============================
+# 🧩 IDE / Editor Files
+# ===============================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ===============================
+# 🖥️ OS Generated Files
+# ===============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===============================
+# 🧪 Test / Build / Cache
+# ===============================
+build/
+dist/
+*.egg-info/
+*.spec
+*.log
+*.tmp
+*.bak
+
+# ===============================
+# 🧱 Migrations (optional)
+# Uncomment this if you don't want migration files in repo
+# ===============================
+# */migrations/
+# !*/migrations/__init__.py
