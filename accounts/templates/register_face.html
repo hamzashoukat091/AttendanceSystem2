@@ -498,25 +498,29 @@
             const detection = await detectFace();
             
             if (detection) {
+                const wasFaceDetected = faceDetected;
                 faceDetected = true;
                 detectionIndicator.className = 'face-detected';
                 detectionIndicator.textContent = '✓ Face Detected';
                 drawDetection(detection);
+                
+                // If face was lost and now detected again during capturing, resume capturing
+                if (isCapturing && !wasFaceDetected) {
+                    showMessage('✓ Face detected - Resuming capture...', 'success');
+                    positionGuide.style.display = 'none';
+                }
             } else {
+                const wasFaceDetected = faceDetected;
                 faceDetected = false;
                 detectionIndicator.className = 'face-not-detected';
                 detectionIndicator.textContent = '✗ No Face Detected';
                 overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
                 
-                // If capturing and face is lost, stop capture and show guide
-                if (isCapturing) {
-                    stopCapture();
-                    showMessage('⚠️ Capture paused - Please position your face in the camera view', 'error');
-                    positionGuide.innerHTML = '👤 Position Your Face in the Camera<br><small>Face must be clearly visible</small>';
+                // If capturing and face is lost, show warning but keep capturing active
+                if (isCapturing && wasFaceDetected) {
+                    showMessage('⚠️ Face lost - Waiting for face to continue...', 'error');
+                    positionGuide.innerHTML = '👤 Position Your Face in the Camera<br><small>Capture will resume when face is detected</small>';
                     positionGuide.style.display = 'block';
-                    setTimeout(() => {
-                        positionGuide.style.display = 'none';
-                    }, 4000);
                 }
             }
             
@@ -655,8 +659,11 @@
             
             // Capture every 2 seconds when face is detected
             captureInterval = setInterval(async () => {
-                if (faceDetected && currentCount < requiredCount) {
+                if (faceDetected && currentCount < requiredCount && isCapturing) {
                     await captureImage();
+                } else if (!faceDetected && isCapturing) {
+                    // Face not detected but still capturing - show waiting message
+                    console.log('Waiting for face detection to continue capture...');
                 }
             }, 2000);
         }
