@@ -247,6 +247,7 @@
         <a href="{% url 'home' %}" class="back-btn">← Back</a>
         <div class="header">
             <h1>📸 Face Scanner</h1>
+            <p id="systemTime" style="font-size: 16px; color: #667eea; font-weight: 600; margin-top: 5px;"></p>
         </div>
         <div style="width: 80px;"></div>
     </div>
@@ -345,7 +346,12 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showMessage(`✓ ${result.message}`, 'success');
+                    // Check if already done (duplicate check-in/out)
+                    if (result.already_done) {
+                        showMessage(`ℹ️ ${result.message}`, 'info');
+                    } else {
+                        showMessage(`✓ ${result.message}`, 'success');
+                    }
                     
                     // Update heading based on action
                     const actionText = action === 'check_in' ? 'Checked In' : 'Checked Out';
@@ -353,7 +359,7 @@
                     
                     // Show attendance details
                     attendanceDetails.innerHTML = `
-                        <p><strong>User:</strong> ${result.user.username}</p>
+                        <p><strong>User:</strong> ${result.user.display_name}</p>
                         <p><strong>Email:</strong> ${result.user.email}</p>
                         <p><strong>Action:</strong> ${result.action.replace('_', ' ').toUpperCase()}</p>
                         <p><strong>Time:</strong> ${result.time}</p>
@@ -379,8 +385,28 @@
             scanAndMark('check_out');
         });
         
+        // Update system time display
+        function updateSystemTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: true 
+            });
+            const dateString = now.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            document.getElementById('systemTime').textContent = `${dateString} - ${timeString}`;
+        }
+        
         // Initialize
         startCamera();
+        updateSystemTime();
+        setInterval(updateSystemTime, 1000); // Update every second
     </script>
 </body>
 </html>

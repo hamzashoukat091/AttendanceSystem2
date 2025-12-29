@@ -51,7 +51,7 @@ class Command(BaseCommand):
         failed_embeddings = 0
         
         for idx, user in enumerate(users, 1):
-            self.stdout.write(f'\n[{idx}/{total_users}] Processing {user.username}...')
+            self.stdout.write(f'\n[{idx}/{total_users}] Processing {user.get_display_name()}...')
             
             user_folder = os.path.join(face_db, user.username)
             

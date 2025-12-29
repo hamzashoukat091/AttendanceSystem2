@@ -172,7 +172,7 @@ def mark_attendance_ajax(request):
 
     return JsonResponse({
         "status": "success",
-        "username": username,
+        "username": user_obj.get_display_name(),
         "type": status,
         "time": time,
         "check_in": check_in_time.strftime("%H:%M:%S") if check_in_time else None
@@ -678,10 +678,10 @@ def chatbot_api(request):
 
         # Giveing the Role to ChatBot
         context_prompt = (
-            "You are AttendEase Assistant.\n"
+            "You are Perfect Attendance Assistant.\n"
             "Rules:\n"
-            "- Answer only related to AttendEase project or its creator.\n"
-            "- If unrelated, reply: 'I can only help with AttendEase-related questions.'\n"
+            "- Answer only related to Perfect Attendance project or its creator.\n"
+            "- If unrelated, reply: 'I can only help with Perfect-Attendance-related questions.'\n"
             "- Keep answers short & formal.\n"
             "- Use bullet points where possible.\n\n"
             "Examples:\n"
@@ -696,7 +696,7 @@ def chatbot_api(request):
             "- Data stored in SQLite\n"
             "- Summarized by date\n"
             "- Exportable in CSV/PDF\n\n"
-            "Q: Who created AttendEase?\n"
+            "Q: Who created Perfect Attendance?\n"
             "A: Created by developer Yash & Tushya, BCA Sem-5, Study at Ganpat University\n\n"
         )
 
@@ -810,7 +810,7 @@ def login_view(request):
                     return redirect("userlogin")
 
                 login(request, user)
-                messages.success(request, f"Welcome, {user.username} 👋")
+                messages.success(request, f"Welcome, {user.get_display_name()} 👋")
                 return redirect("userdash")
             else:
                 messages.error(request, "Invalid username or password.")

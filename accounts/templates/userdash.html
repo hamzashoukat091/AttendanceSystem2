@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
-{% block title %}AttendEase | User Dashboard{% endblock %}
+{% block title %}Perfect Attendance | User Dashboard{% endblock %}
 {% block content %}
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -1166,7 +1166,7 @@ nav .navigation ul li a:hover{
               <img class="img44" src="{% static 'icons8-profile-48.png' %}" alt="profile" width="30" height="30">
               </span>
               
-              <span class="text-2">{{user.username}}</span>
+              <span class="text-2">{{user.get_display_name}}</span>
               </span>
               </a>
                 </li>
@@ -1203,7 +1203,7 @@ nav .navigation ul li a:hover{
         <div class="card welcome-card">
             <div class="welcome-info">
                 <p id="current-date"></p>
-                <h1>Welcome, {{user.username}}!</h1>
+                <h1>Welcome, {{user.get_display_name}}!</h1>
                 <p>Stay updated with your attendance status.</p>
                 <div class="today-status">{{ today_status }}</div>
             </div>
@@ -1319,7 +1319,7 @@ nav .navigation ul li a:hover{
     <div class="footer-actions">
     
     <p>
-        © 2025 AttendEase — All Rights Reserved
+        © 2025 Perfect Attendance — All Rights Reserved
     </p>
 
     <p >    

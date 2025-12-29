@@ -26,8 +26,8 @@ from .models import CustomUser, Attendance, LeaveRequest, FaceChangeRequest, Use
 # Custom Admin Site
 # ---------------------------
 class CustomAdminSite(admin.AdminSite):
-    site_header = "AttendEase Administration"
-    site_title = "AttendEase Admin"
+    site_header = "Perfect Administration"
+    site_title = "Perfect Attendance Admin"
     index_title = "Dashboard"
     
 

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Add / Verify Face | AttendEase{% endblock %}
+{% block title %}Add / Verify Face | Perfect Attendance{% endblock %}
 {% block content %}
 
 <style>
@@ -464,7 +464,7 @@ button:disabled {
 
 <div id="verification-card">
   <h1>Face Registration</h1>
-  <h2>{{ user.username }}</h2>
+  <h2>{{ user.get_display_name }}</h2>
   <hr>
 
 {% if old_face %}

@@ -66,7 +66,7 @@
               {% endif %}"
         alt="{{ u.user.username }}"
         class="profile-img">
-        <h3 class="username">{{ u.user.username }}</h3>
+        <h3 class="username">{{ u.user.get_display_name }}</h3>
         <span class="user-info-tag">{{ u.attendance_percentage }}% Attendance</span>
         <p class="contact-info text-secondary">Present: {{ u.present_days }}</p>
         <p class="contact-info text-secondary">Absent: {{ u.absent_days }}</p>
@@ -87,7 +87,7 @@
         {% endif %}"
   class="modal-img"
   alt="{{ u.user.username }}">        <div class="modal-info-details">
-          <h2 class="modal-username">{{ u.user.username }}</h2>
+          <h2 class="modal-username">{{ u.user.get_display_name }}</h2>
           <p class="text-secondary"><strong>Email:</strong> {{ u.user.email }}</p>
           <p class="text-secondary"><strong>Enrollment:</strong> {{ u.user.enrollment_no }}</p>
           <p class="text-secondary"><strong>Type:</strong> <span class="user-type-tag-modal">{{ u.user.user_type|title }}</span></p>

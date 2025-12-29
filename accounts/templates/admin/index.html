@@ -12,7 +12,7 @@
 
 {% block content %}
 <div id="dashboard-container" class="dashboard-container">
-  <h2 class="dashboard-title">Overview AttendEase</h2>
+  <h2 class="dashboard-title">Overview Perfect App</h2>
 
 
   <!-- Summary Cards -->
@@ -38,7 +38,7 @@
       <ul class="top-list">
         {% for s in top_students %}
         <li>
-          {{ s.username }} — {{ s.attendance_percent|floatformat:2 }}%
+          {{ s.get_display_name }} — {{ s.attendance_percent|floatformat:2 }}%
           <div class="progress-bar">
             <div class="fill" style="width: {{ s.attendance_percent }}%;"></div>
           </div>
@@ -52,7 +52,7 @@
       <ul class="top-list">
         {% for f in top_faculty %}
         <li>
-          {{ f.username }} — {{ f.attendance_percent|floatformat:2 }}%
+          {{ f.get_display_name }} — {{ f.attendance_percent|floatformat:2 }}%
           <div class="progress-bar">
             <div class="fill" style="width: {{ f.attendance_percent }}%;"></div>
           </div>
@@ -93,7 +93,7 @@
       <tbody>
         {% for u in low_attendance_users %}
         <tr>
-          <td>{{ u.username }}</td>
+          <td>{{ u.get_display_name }}</td>
           <td>{{ u.user_type }}</td>
           <td>{{ u.attendance_percent|floatformat:2 }}%</td>
           <td>

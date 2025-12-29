@@ -169,7 +169,7 @@
                 {% for user in users %}
                 <a href="{% url 'register_face' user.id %}" class="user-card">
                     <div class="user-icon">👤</div>
-                    <h3>{{ user.username }}</h3>
+                    <h3>{{ user.get_display_name }}</h3>
                     <p>{{ user.email }}</p>
                     {% if user.face_images_count >= 25 %}
                         <span class="face-status complete">✓ {{ user.face_images_count }} images</span>

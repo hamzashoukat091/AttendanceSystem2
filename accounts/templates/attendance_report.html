@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Attendance Report | AttendEase{% endblock %}
+{% block title %}Attendance Report | PerfectApp{% endblock %}
 
 {% block content %}
 <!DOCTYPE html>
@@ -157,7 +157,7 @@
     <tbody>
       {% for record in records %}
       <tr>
-        <td>{{ record.user.username }}</td>
+        <td>{{ record.user.get_display_name }}</td>
         <td>{{ record.date|date:"Y-m-d" }}</td>
         <td>{{ record.check_in|default:"--"|time:"H:i:s" }}</td>
         <td>{{ record.check_out|default:"--"|time:"H:i:s" }}</td>

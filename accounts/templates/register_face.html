@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Face - {{ user.username }}</title>
+    <title>Register Face - {{ user.get_display_name }}</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         * {
@@ -321,7 +321,7 @@
     <div class="top-bar">
         <a href="{% url 'select_user_registration' %}" class="back-btn">← Back</a>
         <div class="user-info">
-            <h2>👤 {{ user.username }}</h2>
+            <h2>👤 {{ user.get_display_name }}</h2>
             <p>{{ user.email }}</p>
         </div>
         <div style="width: 80px;"></div>

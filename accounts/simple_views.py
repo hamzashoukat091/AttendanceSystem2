@@ -151,7 +151,7 @@ def save_face_image(request):
             user.has_face_data = True
         user.save()
         
-        logger.info(f"Saved face image {img_count + 1} for user {user.username}")
+        logger.info(f"Saved face image {img_count + 1} for user {user.get_display_name()}")
         
         return JsonResponse({
             'success': True,
@@ -255,6 +255,51 @@ def recognize_and_mark_attendance(request):
         
         logger.info(f"Recognized {recognized_user.username} with {confidence:.1f}% confidence (distance: {distance:.3f})")
         
+        # Check existing attendance for today (based on system time)
+        today = datetime.now().date()
+        current_time = datetime.now().time()
+        
+        # Get or create attendance record for today
+        attendance, created = Attendance.objects.get_or_create(
+            user=recognized_user,
+            date=today
+        )
+        
+        # Prevent duplicate check-ins and check-outs
+        if action == 'check_in':
+            if attendance.check_in is not None:
+                return JsonResponse({
+                    'success': True,
+                    'already_done': True,
+                    'message': f'{recognized_user.get_display_name()} has already checked in today at {attendance.check_in.strftime("%H:%M:%S")}.',
+                    'user': {
+                        'username': recognized_user.username,
+                        'display_name': recognized_user.get_display_name(),
+                        'email': recognized_user.email,
+                    },
+                    'action': action,
+                    'time': attendance.check_in.strftime('%H:%M:%S')
+                })
+        else:  # check_out
+            if attendance.check_out is not None:
+                return JsonResponse({
+                    'success': True,
+                    'already_done': True,
+                    'message': f'{recognized_user.get_display_name()} has already checked out today at {attendance.check_out.strftime("%H:%M:%S")}.',
+                    'user': {
+                        'username': recognized_user.username,
+                        'display_name': recognized_user.get_display_name(),
+                        'email': recognized_user.email,
+                    },
+                    'action': action,
+                    'time': attendance.check_out.strftime('%H:%M:%S')
+                })
+            if attendance.check_in is None:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'{recognized_user.get_display_name()} has not checked in yet today. Please check in first before checking out.'
+                })
+        
         # Post attendance to external API
         if action == 'check_in':
             api_response = check_in_user(recognized_user.api_user_id)
@@ -267,15 +312,7 @@ def recognize_and_mark_attendance(request):
                 'error': f"API Error: {api_response['message']}"
             })
         
-        # Also save to local database for backup/reporting
-        today = datetime.now().date()
-        attendance, created = Attendance.objects.get_or_create(
-            user=recognized_user,
-            date=today
-        )
-        
-        current_time = datetime.now().time()
-        
+        # Update local attendance record
         if action == 'check_in':
             attendance.check_in = current_time
             attendance.status = 'Checked In'
@@ -288,9 +325,10 @@ def recognize_and_mark_attendance(request):
         
         return JsonResponse({
             'success': True,
-            'message': f'{recognized_user.username} {action.replace("_", " ")} successful!',
+            'message': f'{recognized_user.get_display_name()} {action.replace("_", " ")} successful!',
             'user': {
                 'username': recognized_user.username,
+                'display_name': recognized_user.get_display_name(),
                 'email': recognized_user.email,
                 'api_id': recognized_user.api_user_id
             },

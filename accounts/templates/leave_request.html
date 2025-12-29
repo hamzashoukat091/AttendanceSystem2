@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Leave Request | AttendEase{% endblock %}
+{% block title %}Leave Request | Perfect Attendance{% endblock %}
 {% block content %}
 
     <!-- Load Lucide Icons -->
@@ -291,7 +291,7 @@
     <div class="container">
         <!-- Leave Request Card -->
         <div class="card">
-               <center><h5>Hello, {{user.username}}</h5> </center>
+               <center><h5>Hello, {{user.get_display_name}}</h5> </center>
             <h1 class="page-title">Leave Request</h1>
            
 

@@ -22,6 +22,10 @@ class CustomUser(AbstractUser):
     # Track how many face images are stored
     face_images_count = models.IntegerField(default=0)
     
+    def get_display_name(self):
+        """Return formatted username: replace underscores with spaces and capitalize each word"""
+        return self.username.replace('_', ' ').title()
+    
     def __str__(self):
         return f"{self.username} ({self.email})"
 

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}AttendEase | User Profile{% endblock %}
+{% block title %}Perfect Attendance | User Profile{% endblock %}
 {% block content %}
 
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -647,7 +647,7 @@
     <div class="avatar-wrapper">
       <img id="user-avatar" src="{% static 'icons8-test-account.gif' %}" alt="User Avatar" class="avatar">
     </div>
-    <p id="profile-name" class="profile-name">{{ user.username }} ({{ user.user_type }})</p>
+    <p id="profile-name" class="profile-name">{{ user.get_display_name }} ({{ user.user_type }})</p>
     <p id="profile-email" class="profile-email">{{ user.email }}</p>
   </div>
 
@@ -806,7 +806,7 @@
   const setupUI = () => {
     // Populate form fields with user data
     const userData = {
-      fullName: "{{ user.first_name }} {{ user.last_name }}".trim() || "{{ user.username }}",
+      fullName: "{{ user.first_name }} {{ user.last_name }}".trim() || "{{ user.get_display_name }}",
       email: "{{ user.email }}",
       phoneNumber: localStorage.getItem('phoneNumber') || ""
     };

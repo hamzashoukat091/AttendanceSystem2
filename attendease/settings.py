@@ -158,12 +158,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # }
 
 JAZZMIN_SETTINGS = {
-    "site_title": "AttendEase Admin",
-    "site_header": "AttendEase Dashboard",
-    "site_brand": "AttendEase",
-    "welcome_sign": "Welcome to AttendEase Admin Portal",
+    "site_title": "Perfect Attendance Admin",
+    "site_header": "Perfect Attendance Dashboard",
+    "site_brand": "Perfect Attendance",
+    "welcome_sign": "Welcome to Perfect Attendance Admin Portal",
     "site_logo": "logo.jpg",  # path in static/images/
-    "copyright": "© 2025 AttendEase",
+    "copyright": "© 2025 Perfect Attendance",
     "show_ui_builder": False,
     "site_url": "/",
 
@@ -174,7 +174,7 @@ JAZZMIN_SETTINGS = {
         {"name": "Face Manage", "url": "/admin/accounts/facechangerequest/", "new_window": False},
         {"name": "Leave Request", "url": "/admin/accounts/leaverequest/", "new_window": False},
         {"name": "User Faces", "url": "/admin/accounts/userface", "new_window": False},
-        {"name": "AttendEase Index Page", "url": "/", "new_window": True},
+        {"name": "Perfect Attendance Index Page", "url": "/", "new_window": True},
     ],
     
     "icons": {

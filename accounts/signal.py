@@ -10,7 +10,7 @@ def send_approval_email(sender, instance, created, **kwargs):
         sender = "tushyparmar@gmail.com.com"
         send_mail(
             "Your account is approved",
-            "You can now log in to AttendEase.",
+            "You can now log in to Perfect Office Attendance.",
             "tushyparmar@gmail.com.com",
             [instance.email],
             fail_silently=True,

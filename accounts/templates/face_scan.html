@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Attendance Mark | AttendEase{% endblock %}
+{% block title %}Attendance Mark | Perfect Attendance{% endblock %}
 {% block content %}
 
 <style>
@@ -209,7 +209,7 @@ button:disabled {
 
 <div id="verification-card">
   <h1>Confirm Presence</h1>
-  <h2>{{ user.username }}</h2>
+  <h2>{{ user.get_display_name }}</h2>
   <hr>
 
   <div id="camera-canvas">

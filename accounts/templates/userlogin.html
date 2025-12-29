@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Login | AttendEase{% endblock %}
+{% block title %}Login | Perfect Attendance{% endblock %}
 
 {% block content %}
 <style>
@@ -171,7 +171,7 @@ ul li {
 <div class="container">
     <div class="card">
         <img class="logo" src="{%static 'AttendEase.png'%}" onclick="window.location.href='{% url 'home' %}'">
-        <h4>Welcome to AttendEase Login</h4>
+        <h4>Welcome to Perfect Attendance Login</h4>
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}

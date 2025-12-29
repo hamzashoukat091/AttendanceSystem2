@@ -174,7 +174,7 @@
                 {% for user in users %}
                 <tr data-search="{{ user.username|lower }} {{ user.email|lower }} {{ user.api_user_id }}">
                     <td>{{ user.api_user_id }}</td>
-                    <td>{{ user.username }}</td>
+                    <td>{{ user.get_display_name }}</td>
                     <td>{{ user.email }}</td>
                     <td>{{ user.face_images_count }}</td>
                     <td>
