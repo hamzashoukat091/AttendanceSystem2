@@ -46,23 +46,23 @@ def home(request):
 
 
 def select_user_for_registration(request):
-    """Search for users by email for face registration - privacy-focused"""
-    users = []
-    search_query = request.GET.get('email', '').strip()
-    search_performed = bool(search_query)
+    """Select user for face registration from dropdown"""
+    # Get all users with API IDs
+    all_users = CustomUser.objects.filter(api_user_id__isnull=False).order_by('first_name', 'last_name', 'email')
     
-    if search_query:
-        # Only show exact email match for privacy
-        users = CustomUser.objects.filter(
-            email__iexact=search_query,
-            api_user_id__isnull=False
-        )
+    selected_user = None
+    user_id = request.GET.get('user_id', '').strip()
+    
+    if user_id:
+        try:
+            selected_user = CustomUser.objects.get(id=user_id, api_user_id__isnull=False)
+        except CustomUser.DoesNotExist:
+            pass
     
     context = {
-        'users': users,
-        'search_query': search_query,
-        'search_performed': search_performed,
-        'title': 'Search by your office app email'
+        'all_users': all_users,
+        'selected_user': selected_user,
+        'title': 'Select User for Face Registration'
     }
     return render(request, 'select_user.html', context)
 

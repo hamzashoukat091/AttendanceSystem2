@@ -55,12 +55,19 @@
             margin-bottom: 20px;
         }
         
-        .search-box input {
+        .search-box select {
             width: 100%;
             padding: 12px;
             font-size: 16px;
             border: 2px solid #ddd;
             border-radius: 8px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .search-box select:focus {
+            outline: none;
+            border-color: #667eea;
         }
         
         .user-grid {
@@ -155,44 +162,39 @@
         </div>
         
         <div class="search-box">
-            <form method="GET" action="{% url 'select_user_registration' %}" style="display: flex; gap: 10px;">
-                <input type="email" name="email" id="searchInput" placeholder="Enter office email address..." value="{{ search_query }}" required style="flex: 1;">
-                <button type="submit" style="padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 500;">
-                    🔍 Search
-                </button>
+            <form method="GET" action="{% url 'select_user_registration' %}" id="userSelectForm">
+                <select name="user_id" id="userSelect" onchange="this.form.submit()">
+                    <option value="">-- Select a user --</option>
+                    {% for user in all_users %}
+                    <option value="{{ user.id }}" {% if selected_user and selected_user.id == user.id %}selected{% endif %}>
+                        {{ user.get_display_name }} ({{ user.email }})
+                    </option>
+                    {% endfor %}
+                </select>
             </form>
         </div>
         
-        {% if search_performed %}
-            {% if users %}
-            <div class="user-grid" id="userGrid">
-                {% for user in users %}
-                <a href="{% url 'register_face' user.id %}" class="user-card">
-                    <div class="user-icon">👤</div>
-                    <h3>{{ user.get_display_name }}</h3>
-                    <p>{{ user.email }}</p>
-                    {% if user.face_images_count >= 25 %}
-                        <span class="face-status complete">✓ {{ user.face_images_count }} images</span>
-                    {% elif user.face_images_count > 0 %}
-                        <span class="face-status partial">{{ user.face_images_count }}/25 images</span>
-                    {% else %}
-                        <span class="face-status none">No images</span>
-                    {% endif %}
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="no-users">
-                <p>⚠️ No user found with email: <strong>{{ search_query }}</strong></p>
-                <p style="margin-top: 10px; font-size: 0.9em;">Please verify the email address and try again.</p>
-            </div>
-            {% endif %}
+        {% if selected_user %}
+        <div class="user-grid" id="userGrid">
+            <a href="{% url 'register_face' selected_user.id %}" class="user-card" style="max-width: 350px; margin: 0 auto;">
+                <div class="user-icon">👤</div>
+                <h3>{{ selected_user.get_display_name }}</h3>
+                <p>{{ selected_user.email }}</p>
+                {% if selected_user.face_images_count >= 25 %}
+                    <span class="face-status complete">✓ {{ selected_user.face_images_count }} images</span>
+                {% elif selected_user.face_images_count > 0 %}
+                    <span class="face-status partial">{{ selected_user.face_images_count }}/25 images</span>
+                {% else %}
+                    <span class="face-status none">No images</span>
+                {% endif %}
+            </a>
+        </div>
         {% endif %}
     </div>
     
     <script>
-        // Auto-focus on search input
-        document.getElementById('searchInput').focus();
+        // Auto-focus on select dropdown
+        document.getElementById('userSelect').focus();
     </script>
 </body>
 </html>
