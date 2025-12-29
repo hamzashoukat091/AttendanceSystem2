@@ -97,16 +97,24 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏢 Office Attendance System</h1>
-        <p class="subtitle">Face Recognition Based Attendance</p>
+        <div style="text-align: center; margin-bottom: 40px;">
+            <img src="https://perfectofficeapp.proxipreview.com/assets/theme/images/logo.svg" alt="Logo" style="width: 160px; height: 140px; display: block; margin: 0 auto;">
+            <p class="subtitle" style="margin: -25px 0 0 0;">Face Recognition Based Attendance</p>
+        </div>
         
         <div class="cards">
-            <a href="{% url 'attendance_scanner' %}" class="card primary">
+            <!-- <a href="{% url 'attendance_scanner' %}" class="card primary">
                 <div class="card-icon">👤</div>
                 <h2>Mark Attendance</h2>
                 <p>Check-in or Check-out using face recognition</p>
-            </a>
+            </a> -->
             
+            <div class="card primary" style="opacity: 0.5; cursor: not-allowed; pointer-events: none;">
+                <div class="card-icon">👤</div>
+                <h2>Mark Attendance</h2>
+                <p>Check-in or Check-out using face recognition</p>
+            </div>
+
             <a href="{% url 'select_user_registration' %}" class="card secondary">
                 <div class="card-icon">📸</div>
                 <h2>Register Face</h2>
