@@ -309,13 +309,224 @@
             display: none;
         }
         
+        /* Tablet and below */
         @media (max-width: 1024px) {
             .main-content {
                 flex-direction: column;
+                padding: 15px;
+                gap: 15px;
+            }
+            
+            .camera-container {
+                flex: 1;
+                min-height: 60vh;
+            }
+            
+            .sidebar {
+                flex: 0;
+                max-height: 250px;
+                overflow-y: auto;
+            }
+            
+            .position-guide {
+                font-size: 16px;
+                padding: 12px 25px;
+            }
+        }
+        
+        /* Mobile landscape and small tablets */
+        @media (max-width: 768px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .top-bar {
+                padding: 12px 20px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .user-info h2 {
+                font-size: 16px;
+            }
+            
+            .user-info p {
+                font-size: 12px;
+            }
+            
+            .main-content {
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .camera-container {
+                padding: 15px;
+                min-height: 50vh;
+            }
+            
+            .progress-bar {
+                height: 30px;
+            }
+            
+            .progress-fill {
+                font-size: 14px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            button {
+                padding: 10px 25px;
+                font-size: 14px;
             }
             
             .sidebar {
                 max-height: 200px;
+            }
+            
+            .instructions, .tips {
+                padding: 15px;
+            }
+            
+            .instructions h3, .tips h3 {
+                font-size: 14px;
+            }
+            
+            .instructions li, .tips p {
+                font-size: 13px;
+            }
+            
+            .position-guide {
+                font-size: 14px;
+                padding: 10px 20px;
+                bottom: 15px;
+            }
+            
+            .face-detected, .face-not-detected {
+                font-size: 11px;
+                padding: 5px 10px;
+            }
+        }
+        
+        /* Mobile portrait */
+        @media (max-width: 480px) {
+            .top-bar {
+                padding: 10px 15px;
+            }
+            
+            .back-btn {
+                padding: 6px 15px;
+                font-size: 13px;
+            }
+            
+            .user-info h2 {
+                font-size: 14px;
+            }
+            
+            .user-info p {
+                font-size: 11px;
+            }
+            
+            .main-content {
+                padding: 8px;
+                gap: 8px;
+            }
+            
+            .camera-container {
+                padding: 12px;
+                border-radius: 12px;
+            }
+            
+            .progress-bar {
+                height: 25px;
+                margin-bottom: 8px;
+            }
+            
+            .progress-fill {
+                font-size: 12px;
+            }
+            
+            .video-wrapper {
+                border-radius: 8px;
+            }
+            
+            .controls {
+                gap: 8px;
+                margin-top: 12px;
+            }
+            
+            button {
+                padding: 8px 20px;
+                font-size: 13px;
+                flex: 1;
+                min-width: 120px;
+            }
+            
+            .sidebar {
+                max-height: 180px;
+            }
+            
+            .instructions, .tips {
+                padding: 12px;
+                border-radius: 10px;
+            }
+            
+            .instructions h3, .tips h3 {
+                font-size: 13px;
+                margin-bottom: 8px;
+            }
+            
+            .instructions li, .tips p {
+                font-size: 12px;
+                margin: 6px 0;
+            }
+            
+            .position-guide {
+                font-size: 12px;
+                padding: 8px 15px;
+                bottom: 10px;
+                border-radius: 10px;
+            }
+            
+            .position-guide small {
+                font-size: 10px;
+            }
+            
+            .face-detected, .face-not-detected {
+                font-size: 10px;
+                padding: 4px 8px;
+                top: 8px;
+                right: 8px;
+            }
+            
+            .message {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 360px) {
+            .top-bar {
+                padding: 8px 10px;
+            }
+            
+            .camera-container {
+                padding: 10px;
+            }
+            
+            button {
+                padding: 7px 15px;
+                font-size: 12px;
+                min-width: 100px;
+            }
+            
+            .position-guide {
+                font-size: 11px;
+                padding: 6px 12px;
             }
         }
     </style>
