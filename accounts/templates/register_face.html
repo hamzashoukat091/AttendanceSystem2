@@ -67,7 +67,7 @@
         }
         
         .camera-container {
-            flex: 2;
+            flex: 3;
             display: flex;
             flex-direction: column;
             background: white;
@@ -131,18 +131,19 @@
         
         .position-guide {
             position: absolute;
-            top: 50%;
+            bottom: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(102, 126, 234, 0.9);
+            transform: translateX(-50%);
+            background: rgba(102, 126, 234, 0.85);
             color: white;
-            padding: 20px 40px;
-            border-radius: 15px;
-            font-size: 24px;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 18px;
             font-weight: bold;
             text-align: center;
             z-index: 10;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
             animation: pulseGuide 1s infinite;
         }
         
@@ -154,27 +155,29 @@
         .face-detected {
             position: absolute;
             top: 10px;
-            left: 10px;
-            background: rgba(67, 233, 123, 0.9);
+            right: 10px;
+            background: rgba(67, 233, 123, 0.75);
             color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
             z-index: 10;
+            backdrop-filter: blur(5px);
         }
         
         .face-not-detected {
             position: absolute;
             top: 10px;
-            left: 10px;
-            background: rgba(255, 59, 48, 0.9);
+            right: 10px;
+            background: rgba(255, 59, 48, 0.75);
             color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
             z-index: 10;
+            backdrop-filter: blur(5px);
         }
         
         .controls {
