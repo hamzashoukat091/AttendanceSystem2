@@ -79,13 +79,56 @@ def register_face(request, user_id):
     user_folder = os.path.join(FACE_DB, user.username)
     current_count = len(os.listdir(user_folder)) if os.path.exists(user_folder) else 0
     
+    # Check if user already has face data registered
+    has_existing_face = user.has_face_data and current_count > 0
+    
     context = {
         'user': user,
         'current_count': current_count,
         'required_count': 25,
+        'has_existing_face': has_existing_face,
         'title': f'Register Face for {user.username}'
     }
     return render(request, 'register_face.html', context)
+
+
+@csrf_exempt
+def delete_face_data(request, user_id):
+    """
+    Delete all existing face data (images and embeddings) for a user to allow recapture
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+    
+    try:
+        user = CustomUser.objects.get(id=user_id)
+        
+        # Delete face folder and all images
+        user_folder = os.path.join(FACE_DB, user.username)
+        if os.path.exists(user_folder):
+            import shutil
+            shutil.rmtree(user_folder)
+            logger.info(f"Deleted face folder for {user.username}")
+        
+        # Delete all face embeddings from database
+        deleted_embeddings = UserFaceEmbedding.objects.filter(user=user).delete()
+        logger.info(f"Deleted {deleted_embeddings[0]} embeddings for {user.username}")
+        
+        # Update user flags
+        user.has_face_data = False
+        user.face_images_count = 0
+        user.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'All face data deleted successfully. You can now recapture.'
+        })
+        
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User not found'})
+    except Exception as e:
+        logger.error(f"Error deleting face data: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 @csrf_exempt

@@ -331,8 +331,8 @@
         <div class="camera-container">
             <div class="progress-section">
                 <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill" style="width: {{ current_count }}%">
-                        <span id="progressText">{{ current_count }}/{{ required_count }}</span>
+                    <div class="progress-fill" id="progressFill" style="width: 0%">
+                        <span id="progressText">0/{{ required_count }}</span>
                     </div>
                 </div>
                 <div id="messageBox"></div>
@@ -347,17 +347,24 @@
             </div>
             
             <div class="controls">
-                <button class="btn-capture" id="startBtn">▶️ Start Auto Capture</button>
+                <button class="btn-capture" id="startBtn">{% if has_existing_face %}🔄 Recapture Face{% else %}▶️ Start Auto Capture{% endif %}</button>
                 <button class="btn-capture" id="stopBtn" style="display:none; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);">⏸️ Stop Capture</button>
                 <button class="btn-done" id="doneBtn" style="display:none;">✓ Done</button>
             </div>
         </div>
         
         <div class="sidebar">
+            {% if has_existing_face %}
+            <div class="instructions" style="border-left: 4px solid #ff6b6b; background: #fff5f5;">
+                <p style="color: #c53030; font-weight: bold; margin: 10px 0;">This user already has {{ current_count }} face images registered.</p>
+                <p style="color: #666; font-size: 13px; margin: 10px 0;">Click "Recapture Face" to register face again. The count will start from 0.</p>
+            </div>
+            {% endif %}
+            
             <div class="instructions">
                 <h3>📋 Instructions</h3>
                 <ul>
-                    <li>Click "Start Auto Capture" to begin</li>
+                    <li>Click "{% if has_existing_face %}Recapture{% else %}Start Auto Capture{% endif %}" to begin</li>
                     <li>System will automatically detect your face</li>
                     <li>Follow position guides as they appear</li>
                     <li>Stay still when capturing</li>
@@ -391,9 +398,10 @@
         const detectionIndicator = document.getElementById('detectionIndicator');
         const positionGuide = document.getElementById('positionGuide');
         
-        let currentCount = {{ current_count }};
+        let currentCount = 0;  // Always start from 0
         const requiredCount = {{ required_count }};
         const userId = {{ user.id }};
+        const hasExistingFace = {{ has_existing_face|yesno:"true,false" }};
         let isCapturing = false;
         let faceDetected = false;
         let modelsLoaded = false;
@@ -499,6 +507,17 @@
                 detectionIndicator.className = 'face-not-detected';
                 detectionIndicator.textContent = '✗ No Face Detected';
                 overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
+                
+                // If capturing and face is lost, stop capture and show guide
+                if (isCapturing) {
+                    stopCapture();
+                    showMessage('⚠️ Capture paused - Please position your face in the camera view', 'error');
+                    positionGuide.innerHTML = '👤 Position Your Face in the Camera<br><small>Face must be clearly visible</small>';
+                    positionGuide.style.display = 'block';
+                    setTimeout(() => {
+                        positionGuide.style.display = 'none';
+                    }, 4000);
+                }
             }
             
             requestAnimationFrame(detectionLoop);
@@ -573,7 +592,6 @@
                 if (result.success) {
                     currentCount = result.count;
                     updateProgress();
-                    showMessage(`✓ Image ${currentCount} captured!`, 'success');
                     showPositionGuide();
                 } else {
                     showMessage('Error: ' + result.error, 'error');
@@ -585,10 +603,48 @@
         
         // Auto capture loop
         let captureInterval;
-        function startAutoCapture() {
+        async function startAutoCapture() {
             if (!modelsLoaded) {
                 showMessage('Please wait for models to load', 'error');
                 return;
+            }
+            
+            // If user has existing face data, delete it first
+            if (hasExistingFace && currentCount === 0) {
+                if (!confirm('This will delete all existing face images and start fresh. Continue?')) {
+                    return;
+                }
+                
+                showMessage('Deleting old face data...', 'success');
+                startBtn.disabled = true;
+                
+                try {
+                    const deleteResponse = await fetch(`/delete-face-data/${userId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    const deleteResult = await deleteResponse.json();
+                    
+                    if (!deleteResult.success) {
+                        showMessage('Error deleting old data: ' + deleteResult.error, 'error');
+                        startBtn.disabled = false;
+                        return;
+                    }
+                    
+                    showMessage('Old data deleted. Starting fresh capture...', 'success');
+                    // Reset counter to 0
+                    currentCount = 0;
+                    updateProgress();
+                } catch (err) {
+                    showMessage('Error: ' + err.message, 'error');
+                    startBtn.disabled = false;
+                    return;
+                }
+                
+                startBtn.disabled = false;
             }
             
             isCapturing = true;
@@ -610,7 +666,7 @@
             clearInterval(captureInterval);
             startBtn.style.display = 'inline-block';
             stopBtn.style.display = 'none';
-            showMessage('Auto-capture stopped', 'success');
+            showMessage('Auto-capture paused', 'success');
         }
         
         // Start button
