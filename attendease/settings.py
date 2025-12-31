@@ -205,3 +205,50 @@ JAZZMIN_UI_TWEAKS = {
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 print(BASE_DIR)
+
+# Logging Configuration for Face Recognition
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'detailed': {
+            'format': '[{asctime}] {levelname:8s} | {name:30s} | {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'face_recognition_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'face_recognition.log',
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'detailed',
+        },
+    },
+    'loggers': {
+        'accounts.simple_views': {
+            'handlers': ['console', 'face_recognition_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'accounts.utils': {
+            'handlers': ['console', 'face_recognition_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}

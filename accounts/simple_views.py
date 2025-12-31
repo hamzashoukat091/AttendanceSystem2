@@ -277,10 +277,17 @@ def recognize_and_mark_attendance(request):
         logger.info(f"Loaded embeddings for {len(user_embeddings)} users")
         
         # Find best match using cosine similarity (VERY FAST: vector math)
+        DISTANCE_THRESHOLD = 0.30  # Maximum cosine distance allowed (lower = stricter, 0.30 = ~70% confidence minimum)
+        
+        logger.info("\n" + "#"*80)
+        logger.info(f"# FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"# Action: {action.upper()}")
+        logger.info("#"*80)
+        
         user_id, distance, confidence = find_best_match(
             query_embedding, 
             user_embeddings, 
-            threshold=0.45  # SFace recommended threshold
+            threshold=DISTANCE_THRESHOLD
         )
         
         # Clean up temp file
@@ -288,6 +295,8 @@ def recognize_and_mark_attendance(request):
             os.remove(temp_image)
         
         if user_id is None:
+            logger.warning("RECOGNITION FAILED - No matching face found above threshold")
+            logger.info("#"*80 + "\n")
             return JsonResponse({
                 'success': False,
                 'error': 'Face not recognized. Please register first or try again with better lighting.'
@@ -296,7 +305,8 @@ def recognize_and_mark_attendance(request):
         # Get the recognized user
         recognized_user = CustomUser.objects.get(id=user_id)
         
-        logger.info(f"Recognized {recognized_user.username} with {confidence:.1f}% confidence (distance: {distance:.3f})")
+        logger.info(f"\n>>> FINAL RESULT: Successfully recognized {recognized_user.get_display_name()} ({recognized_user.username})")
+        logger.info(f">>> Confidence: {confidence:.2f}% | Distance: {distance:.4f} | Threshold: {CONFIDENCE_THRESHOLD}")
         
         # Check existing attendance for today (based on system time)
         today = datetime.now().date()
@@ -366,6 +376,10 @@ def recognize_and_mark_attendance(request):
         
         attendance.save()
         
+        logger.info(f">>> Attendance marked: {action.upper()} at {current_time.strftime('%H:%M:%S')}")
+        logger.info(f">>> Status updated to: {attendance.status}")
+        logger.info("#"*80 + "\n")
+        
         return JsonResponse({
             'success': True,
             'message': f'{recognized_user.get_display_name()} {action.replace("_", " ")} successful!',
@@ -377,8 +391,8 @@ def recognize_and_mark_attendance(request):
             },
             'action': action,
             'time': current_time.strftime('%H:%M:%S'),
-            'confidence': f"{confidence:.1f}%",
-            'distance': f"{distance:.3f}"
+            'confidence': f"{confidence:.2f}%",
+            'distance': f"{distance:.4f}"
         })
         
     except CustomUser.DoesNotExist:

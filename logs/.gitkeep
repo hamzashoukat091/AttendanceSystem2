@@ -1,0 +1,4 @@
+# This directory stores face recognition logs
+# Files in this directory:
+# - face_recognition.log: Main log file with confidence scores and matching details
+# - face_recognition.log.1 - face_recognition.log.5: Rotated backup logs (10MB each)

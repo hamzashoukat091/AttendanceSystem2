@@ -107,22 +107,84 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.45):
     Returns:
         tuple: (user_id, distance, confidence) or (None, None, None) if no match
     """
+    from .models import CustomUser
+    
     best_user_id = None
     best_distance = float('inf')
+    all_matches = []  # Store all matches for logging
+    
+    logger.info("="*80)
+    logger.info(f"FACE MATCHING ANALYSIS - Threshold: {threshold}")
+    logger.info(f"Comparing against {len(user_embeddings)} users with registered faces")
+    logger.info("="*80)
     
     for user_id, embeddings_list in user_embeddings.items():
-        for stored_embedding in embeddings_list:
+        user_best_distance = float('inf')
+        
+        for idx, stored_embedding in enumerate(embeddings_list):
             distance = cosine_distance(query_embedding, stored_embedding)
+            
+            if distance < user_best_distance:
+                user_best_distance = distance
             
             if distance < best_distance:
                 best_distance = distance
                 best_user_id = user_id
+        
+        # Calculate confidence for this user
+        user_confidence = (1.0 - user_best_distance) * 100
+        
+        # Get username for logging
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            username = user.username
+            display_name = user.get_display_name()
+        except:
+            username = f"User_{user_id}"
+            display_name = username
+        
+        all_matches.append({
+            'user_id': user_id,
+            'username': username,
+            'display_name': display_name,
+            'distance': user_best_distance,
+            'confidence': user_confidence,
+            'embeddings_count': len(embeddings_list)
+        })
+    
+    # Sort matches by confidence (descending)
+    all_matches.sort(key=lambda x: x['confidence'], reverse=True)
+    
+    # Log top 10 matches
+    logger.info("\nTOP 10 MATCHING RESULTS:")
+    logger.info("-" * 80)
+    logger.info(f"{'Rank':<6} {'Username':<20} {'Display Name':<25} {'Distance':<10} {'Confidence':<12} {'Pass?'}")
+    logger.info("-" * 80)
+    
+    for rank, match in enumerate(all_matches[:10], 1):
+        passed = "[PASS]" if match['distance'] <= threshold else "[FAIL]"
+        logger.info(
+            f"{rank:<6} {match['username']:<20} {match['display_name']:<25} "
+            f"{match['distance']:<10.4f} {match['confidence']:>6.2f}%     {passed}"
+        )
     
     # Check if best match meets threshold
     if best_distance <= threshold:
         confidence = (1.0 - best_distance) * 100  # Convert to percentage
+        logger.info("\n" + "="*80)
+        logger.info(f"[MATCH FOUND]")
+        logger.info(f"  User: {all_matches[0]['display_name']} ({all_matches[0]['username']})")
+        logger.info(f"  Distance: {best_distance:.4f} (threshold: {threshold})")
+        logger.info(f"  Confidence: {confidence:.2f}%")
+        logger.info(f"  Embeddings checked: {all_matches[0]['embeddings_count']}")
+        logger.info("="*80 + "\n")
         return best_user_id, best_distance, confidence
     else:
+        logger.info("\n" + "="*80)
+        logger.info(f"[NO MATCH] - Best distance {best_distance:.4f} exceeds threshold {threshold}")
+        if all_matches:
+            logger.info(f"  Closest was: {all_matches[0]['display_name']} with {all_matches[0]['confidence']:.2f}% confidence")
+        logger.info("="*80 + "\n")
         return None, None, None
 
 
