@@ -296,6 +296,7 @@
                 <canvas id="overlay"></canvas>
                 <canvas id="canvas"></canvas>
                 <div id="detectionIndicator" class="face-not-detected">⚠️ No Face Detected</div>
+                <div id="livenessIndicator" class="face-not-detected" style="top: 50px; background: rgba(0, 123, 255, 0.9); display: none;">😐 Please Smile</div>
             </div>
             
             <div class="action-buttons">
@@ -341,9 +342,12 @@
         const attendanceInfo = document.getElementById('attendanceInfo');
         const attendanceDetails = document.getElementById('attendanceDetails');
         const detectionIndicator = document.getElementById('detectionIndicator');
+        const livenessIndicator = document.getElementById('livenessIndicator');
         
         let modelsLoaded = false;
         let faceDetected = false;
+        let livenessVerified = false;
+        let currentChallenge = 'smile';
         
         // Load face-api.js models
         async function loadModels() {
@@ -351,7 +355,8 @@
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'),
                     faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'),
-                    faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/')
+                    faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'),
+                    faceapi.nets.faceExpressionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/')
                 ]);
                 modelsLoaded = true;
                 showMessage('Face detection ready!', 'success');
@@ -387,7 +392,8 @@
             try {
                 const detection = await faceapi
                     .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                    .withFaceLandmarks();
+                    .withFaceLandmarks()
+                    .withFaceExpressions();
                 
                 return detection;
             } catch (err) {
@@ -422,19 +428,53 @@
                 faceDetected = true;
                 detectionIndicator.className = 'face-detected';
                 detectionIndicator.textContent = '✓ Face Detected';
-                checkInBtn.disabled = false;
-                checkOutBtn.disabled = false;
                 drawDetection(detection);
+
+                // Liveness Check
+                if (!livenessVerified) {
+                    checkLiveness(detection);
+                    checkInBtn.disabled = true;
+                    checkOutBtn.disabled = true;
+                } else {
+                    livenessIndicator.style.display = 'block';
+                    livenessIndicator.className = 'face-detected';
+                    livenessIndicator.textContent = '✓ Liveness Verified';
+                    livenessIndicator.style.background = 'rgba(67, 233, 123, 0.9)';
+                    
+                    checkInBtn.disabled = false;
+                    checkOutBtn.disabled = false;
+                }
             } else {
                 faceDetected = false;
+                livenessVerified = false; // Reset liveness if face is lost
+
                 detectionIndicator.className = 'face-not-detected';
                 detectionIndicator.textContent = '⚠️ No Face Detected';
+                
+                livenessIndicator.style.display = 'none';
+
                 checkInBtn.disabled = true;
                 checkOutBtn.disabled = true;
                 overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
             }
             
             requestAnimationFrame(detectionLoop);
+        }
+
+        function checkLiveness(detection) {
+            livenessIndicator.style.display = 'block';
+            livenessIndicator.className = 'face-not-detected';
+            livenessIndicator.style.background = 'rgba(0, 123, 255, 0.9)';
+            
+            const expressions = detection.expressions;
+            
+            // Simple challenge: Smile
+            livenessIndicator.textContent = '😐 Please Smile to Verify';
+            
+            if (expressions.happy > 0.7) {
+                livenessVerified = true;
+                showMessage('Liveness verified!', 'success');
+            }
         }
         
         // Show message
@@ -446,6 +486,11 @@
         async function scanAndMark(action) {
             if (!faceDetected) {
                 showMessage('❌ Please position your face in the camera first!', 'error');
+                return;
+            }
+
+            if (!livenessVerified) {
+                showMessage('❌ Please complete liveness verification (Smile)!', 'error');
                 return;
             }
             
