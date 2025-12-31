@@ -318,13 +318,12 @@
             </div>
             
             <div class="instructions">
-                <h3>📋 Instructions</h3>
+                <h3>📋 Smart Guide</h3>
                 <ul>
-                    <li>Position your face in the center</li>
-                    <li>Wait for face detection (green indicator)</li>
-                    <li>Click Check In or Check Out button</li>
-                    <li>Wait for face recognition</li>
-                    <li>Attendance will be marked automatically</li>
+                    <li><strong>1. Position Face:</strong> Center your face in the camera frame.</li>
+                    <li><strong>2. Neutral Face:</strong> Look at the camera with a neutral expression (😐) to start.</li>
+                    <li><strong>3. Smile Check:</strong> When prompted, <b>Smile</b> (😁) to verify you are real.</li>
+                    <li><strong>4. Mark Attendance:</strong> Once verified, click <b>Check In</b> or <b>Check Out</b>.</li>
                 </ul>
             </div>
         </div>
@@ -347,7 +346,7 @@
         let modelsLoaded = false;
         let faceDetected = false;
         let livenessVerified = false;
-        let currentChallenge = 'smile';
+        let livenessState = 0; // 0: Neutral, 1: Smile
         
         // Load face-api.js models
         async function loadModels() {
@@ -447,6 +446,7 @@
             } else {
                 faceDetected = false;
                 livenessVerified = false; // Reset liveness if face is lost
+                livenessState = 0;
 
                 detectionIndicator.className = 'face-not-detected';
                 detectionIndicator.textContent = '⚠️ No Face Detected';
@@ -463,17 +463,29 @@
 
         function checkLiveness(detection) {
             livenessIndicator.style.display = 'block';
-            livenessIndicator.className = 'face-not-detected';
-            livenessIndicator.style.background = 'rgba(0, 123, 255, 0.9)';
-            
             const expressions = detection.expressions;
             
-            // Simple challenge: Smile
-            livenessIndicator.textContent = '😐 Please Smile to Verify';
-            
-            if (expressions.happy > 0.7) {
-                livenessVerified = true;
-                showMessage('Liveness verified!', 'success');
+            if (livenessState === 0) {
+                // Step 1: Check for Neutral (Not Happy)
+                livenessIndicator.className = 'face-not-detected';
+                livenessIndicator.style.background = 'rgba(0, 123, 255, 0.9)';
+                livenessIndicator.textContent = '😐 Please show Neutral Face';
+                
+                // If happiness is low, we assume neutral/serious
+                if (expressions.happy < 0.1) {
+                    livenessState = 1;
+                }
+            } else if (livenessState === 1) {
+                // Step 2: Check for Smile
+                livenessIndicator.className = 'face-not-detected';
+                livenessIndicator.style.background = 'rgba(255, 193, 7, 0.9)'; // Orange/Yellow
+                livenessIndicator.textContent = '😁 Now Smile!';
+                
+                if (expressions.happy > 0.7) {
+                    livenessVerified = true;
+                    livenessState = 2;
+                    showMessage('Liveness verified!', 'success');
+                }
             }
         }
         
