@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from deepface import DeepFace
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 from .models import CustomUser, Attendance, UserFaceEmbedding
@@ -309,13 +309,22 @@ def recognize_and_mark_attendance(request):
         logger.info(f">>> Confidence: {confidence:.2f}% | Distance: {distance:.4f} | Threshold: {DISTANCE_THRESHOLD}")
         
         # Check existing attendance for today (based on system time)
-        today = datetime.now().date()
-        current_time = datetime.now().time()
+        # LOGIC: Day starts at 8:00 AM and ends at 8:00 AM next day.
+        # If current time < 8:00 AM, it belongs to the previous day's attendance cycle.
+        now = datetime.now()
+        current_time = now.time()
         
-        # Get or create attendance record for today
+        if now.hour < 8:
+            attendance_date = (now - timedelta(days=1)).date()
+        else:
+            attendance_date = now.date()
+            
+        logger.info(f"Attendance Date calculated as: {attendance_date} (Current time: {now})")
+        
+        # Get or create attendance record for the calculated date
         attendance, created = Attendance.objects.get_or_create(
             user=recognized_user,
-            date=today
+            date=attendance_date
         )
         
         # Prevent duplicate check-ins and check-outs

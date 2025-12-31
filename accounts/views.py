@@ -98,10 +98,16 @@ def face_view(request):
 @login_required
 def face_scan(request):
     user = request.user
-    today = datetime.today().date()
+    
+    # LOGIC: Day starts at 8:00 AM and ends at 8:00 AM next day.
+    now = datetime.now()
+    if now.hour < 8:
+        attendance_date = (now - timedelta(days=1)).date()
+    else:
+        attendance_date = now.date()
 
     try:
-        attendance = Attendance.objects.get(user=user, date=today)
+        attendance = Attendance.objects.get(user=user, date=attendance_date)
     except Attendance.DoesNotExist:
         attendance = None
 
@@ -154,10 +160,17 @@ def mark_attendance_ajax(request):
     auto_mark_absent(user_obj)
     status, time, check_in_time = mark_user_attendance(user_obj)
 
+    # LOGIC: Day starts at 8:00 AM and ends at 8:00 AM next day.
+    now = datetime.now()
+    if now.hour < 8:
+        attendance_date = (now - timedelta(days=1)).date()
+    else:
+        attendance_date = now.date()
+
     # Safely create/update today's attendance
     attendance, created = Attendance.objects.get_or_create(
         user=user_obj,
-        date=date.today(),
+        date=attendance_date,
         defaults={
             "status": status,
             "check_in": check_in_time,

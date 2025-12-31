@@ -189,11 +189,16 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.45):
 
 
 def mark_user_attendance(user):
-    today = datetime.today().date()
     now_time = datetime.now()
+    
+    # LOGIC: Day starts at 8:00 AM and ends at 8:00 AM next day.
+    if now_time.hour < 8:
+        attendance_date = (now_time - timedelta(days=1)).date()
+    else:
+        attendance_date = now_time.date()
 
     # Get or create today's record
-    attendance, created = Attendance.objects.get_or_create(user=user, date=today)
+    attendance, created = Attendance.objects.get_or_create(user=user, date=attendance_date)
 
     # 🟢 Case 1 — First check-in
     if not attendance.check_in:
