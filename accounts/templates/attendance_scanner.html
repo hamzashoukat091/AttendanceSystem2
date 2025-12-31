@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -133,6 +134,42 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
+            position: absolute;
+        }
+        
+        #overlay {
+            position: absolute;
+            transform: scaleX(-1);
+        }
+        
+        .face-detected {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(67, 233, 123, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 10px rgba(67, 233, 123, 0.3);
+        }
+        
+        .face-not-detected {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 59, 48, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 10px rgba(255, 59, 48, 0.3);
         }
         
         .sidebar {
@@ -256,14 +293,16 @@
         <div class="camera-container">
             <div class="video-wrapper">
                 <video id="video" autoplay playsinline></video>
+                <canvas id="overlay"></canvas>
                 <canvas id="canvas"></canvas>
+                <div id="detectionIndicator" class="face-not-detected">⚠️ No Face Detected</div>
             </div>
             
             <div class="action-buttons">
-                <button class="action-btn check-in" id="checkInBtn">
+                <button class="action-btn check-in" id="checkInBtn" disabled>
                     ✓ Check In
                 </button>
-                <button class="action-btn check-out" id="checkOutBtn">
+                <button class="action-btn check-out" id="checkOutBtn" disabled>
                     ✗ Check Out
                 </button>
             </div>
@@ -281,6 +320,7 @@
                 <h3>📋 Instructions</h3>
                 <ul>
                     <li>Position your face in the center</li>
+                    <li>Wait for face detection (green indicator)</li>
                     <li>Click Check In or Check Out button</li>
                     <li>Wait for face recognition</li>
                     <li>Attendance will be marked automatically</li>
@@ -292,12 +332,33 @@
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
+        const overlay = document.getElementById('overlay');
         const ctx = canvas.getContext('2d');
+        const overlayCtx = overlay.getContext('2d');
         const checkInBtn = document.getElementById('checkInBtn');
         const checkOutBtn = document.getElementById('checkOutBtn');
         const messageBox = document.getElementById('messageBox');
         const attendanceInfo = document.getElementById('attendanceInfo');
         const attendanceDetails = document.getElementById('attendanceDetails');
+        const detectionIndicator = document.getElementById('detectionIndicator');
+        
+        let modelsLoaded = false;
+        let faceDetected = false;
+        
+        // Load face-api.js models
+        async function loadModels() {
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'),
+                    faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'),
+                    faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/')
+                ]);
+                modelsLoaded = true;
+                showMessage('Face detection ready!', 'success');
+            } catch (err) {
+                showMessage('Error loading face detection models: ' + err.message, 'error');
+            }
+        }
         
         // Start camera
         async function startCamera() {
@@ -306,9 +367,74 @@
                     video: { width: 640, height: 480 } 
                 });
                 video.srcObject = stream;
+                
+                // Wait for video to be ready
+                video.addEventListener('loadedmetadata', () => {
+                    overlay.width = video.videoWidth;
+                    overlay.height = video.videoHeight;
+                });
+                
+                showMessage('Camera started successfully', 'success');
             } catch (err) {
                 showMessage('Error accessing camera: ' + err.message, 'error');
             }
+        }
+        
+        // Detect face in video
+        async function detectFace() {
+            if (!modelsLoaded || !video.videoWidth) return null;
+            
+            try {
+                const detection = await faceapi
+                    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks();
+                
+                return detection;
+            } catch (err) {
+                console.error('Detection error:', err);
+                return null;
+            }
+        }
+        
+        // Draw detection box
+        function drawDetection(detection) {
+            overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
+            
+            if (detection) {
+                const box = detection.detection.box;
+                overlayCtx.strokeStyle = '#43e97b';
+                overlayCtx.lineWidth = 3;
+                overlayCtx.strokeRect(box.x, box.y, box.width, box.height);
+                
+                // Draw confidence text
+                const confidence = (detection.detection.score * 100).toFixed(1);
+                overlayCtx.fillStyle = '#43e97b';
+                overlayCtx.font = 'bold 16px Arial';
+                overlayCtx.fillText(`${confidence}%`, box.x, box.y - 5);
+            }
+        }
+        
+        // Continuous face detection loop
+        async function detectionLoop() {
+            const detection = await detectFace();
+            
+            if (detection) {
+                faceDetected = true;
+                detectionIndicator.className = 'face-detected';
+                detectionIndicator.textContent = '✓ Face Detected';
+                checkInBtn.disabled = false;
+                checkOutBtn.disabled = false;
+                drawDetection(detection);
+            } else {
+                faceDetected = false;
+                detectionIndicator.className = 'face-not-detected';
+                detectionIndicator.textContent = '⚠️ No Face Detected';
+                checkInBtn.disabled = true;
+                checkOutBtn.disabled = true;
+                overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
+            }
+            
+            requestAnimationFrame(detectionLoop);
         }
         
         // Show message
@@ -318,6 +444,11 @@
         
         // Scan face and mark attendance
         async function scanAndMark(action) {
+            if (!faceDetected) {
+                showMessage('❌ Please position your face in the camera first!', 'error');
+                return;
+            }
+            
             checkInBtn.disabled = true;
             checkOutBtn.disabled = true;
             attendanceInfo.style.display = 'none';
@@ -372,8 +503,11 @@
                 showMessage('Network error: ' + err.message, 'error');
             }
             
-            checkInBtn.disabled = false;
-            checkOutBtn.disabled = false;
+            // Re-enable buttons only if face is still detected
+            if (faceDetected) {
+                checkInBtn.disabled = false;
+                checkOutBtn.disabled = false;
+            }
         }
         
         // Button click handlers
@@ -404,9 +538,33 @@
         }
         
         // Initialize
-        startCamera();
+        async function init() {
+            // Check if face-api is loaded
+            if (typeof faceapi === 'undefined') {
+                showMessage('Loading face detection library...', 'info');
+                setTimeout(init, 1000);
+                return;
+            }
+            
+            await loadModels();
+            await startCamera();
+            
+            // Start detection loop after camera is ready
+            setTimeout(() => {
+                detectionLoop();
+            }, 1000);
+        }
+        
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        // Update time every second
         updateSystemTime();
-        setInterval(updateSystemTime, 1000); // Update every second
+        setInterval(updateSystemTime, 1000);
     </script>
 </body>
 </html>

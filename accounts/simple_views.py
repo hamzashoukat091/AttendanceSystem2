@@ -306,7 +306,7 @@ def recognize_and_mark_attendance(request):
         recognized_user = CustomUser.objects.get(id=user_id)
         
         logger.info(f"\n>>> FINAL RESULT: Successfully recognized {recognized_user.get_display_name()} ({recognized_user.username})")
-        logger.info(f">>> Confidence: {confidence:.2f}% | Distance: {distance:.4f} | Threshold: {CONFIDENCE_THRESHOLD}")
+        logger.info(f">>> Confidence: {confidence:.2f}% | Distance: {distance:.4f} | Threshold: {DISTANCE_THRESHOLD}")
         
         # Check existing attendance for today (based on system time)
         today = datetime.now().date()
