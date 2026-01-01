@@ -60,7 +60,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 50px;
+            margin-bottom: 20px;
         }
 
         .logo-area img {
@@ -169,13 +169,11 @@
         }
 
         .message-container {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            width: 90%;
-            max-width: 600px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            z-index: 100;
         }
         
         .message {
@@ -190,6 +188,8 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            width: 100%;
+            max-width: 600px;
         }
         
         .message.success {
@@ -267,14 +267,14 @@
     </style>
 </head>
 <body>
-    <div id="messageContainer" class="message-container"></div>
-
     <div class="container">
         <div class="logo-area">
             <img src="https://perfectofficeapp.proxipreview.com/assets/theme/images/logo.svg" alt="Logo">
             <p class="subtitle">Face Recognition Based Attendance</p>
         </div>
         
+        <div id="messageContainer" class="message-container"></div>
+
         <div class="cards">
             <a href="{% url 'attendance_scanner' %}?action=check_in" class="card check-in" onclick="window.location.replace(this.href); return false;">
                 <div class="card-icon">🏢</div>
@@ -287,7 +287,7 @@
             </a>
         </div>
 
-        <a href="{% url 'select_user_registration' %}" class="register-link">Register New Face</a>
+        <!-- <a href="{% url 'select_user_registration' %}" class="register-link">Register New Face</a> -->
     </div>
 
     <script>
