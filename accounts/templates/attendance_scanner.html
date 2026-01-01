@@ -6,6 +6,22 @@
     <title>Attendance Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #794BC4;
+            --primary-dark: #5b21b6;
+            --success: #10B981;
+            --success-dark: #047857;
+            --danger: #EF4444;
+            --danger-dark: #b91c1c;
+            --surface: #ffffff;
+            --bg: #f1f5f9;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,34 +29,47 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(121, 75, 196, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
             height: 100vh;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
+            color: var(--text-main);
         }
         
         .top-bar {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
         }
         
         .back-btn {
-            padding: 8px 20px;
-            background: #667eea;
-            color: white;
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            color: var(--text-main);
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 99px;
             font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
         .back-btn:hover {
-            background: #5568d3;
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateX(-2px);
         }
         
         .header {
@@ -48,74 +77,43 @@
         }
         
         .header h1 {
-            font-size: 24px;
-            color: #333;
+            font-size: 1.25rem;
+            color: var(--text-main);
+            font-weight: 700;
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .header p {
-            font-size: 13px;
-            color: #666;
-            margin: 2px 0 0 0;
+            font-size: 0.875rem;
+            color: var(--text-sub);
+            margin: 4px 0 0 0;
+            font-weight: 500;
         }
         
         .main-content {
             flex: 1;
             display: flex;
-            gap: 20px;
-            padding: 20px;
+            gap: 30px;
+            padding: 30px 40px;
             overflow: hidden;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
         }
         
         .camera-container {
             flex: 2;
             display: flex;
             flex-direction: column;
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 15px;
-        }
-        
-        .action-btn {
-            flex: 1;
-            padding: 15px 40px;
-            font-size: 18px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-        
-        .action-btn.check-in {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            color: white;
-        }
-        
-        .action-btn.check-out {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            color: white;
-        }
-        
-        .action-btn:hover:not(:disabled) {
-            transform: scale(1.05);
-        }
-        
-        .action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        #messageBox {
-            margin-bottom: 15px;
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            position: relative;
         }
         
         .video-wrapper {
@@ -124,9 +122,11 @@
             align-items: center;
             justify-content: center;
             background: #000;
-            border-radius: 10px;
+            border-radius: 16px;
             overflow: hidden;
             position: relative;
+            width: 100%;
+            height: 100%;
         }
         
         video {
@@ -134,157 +134,251 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
-            position: absolute;
         }
         
         #overlay {
             position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             transform: scaleX(-1);
+        }
+        
+        .status-display {
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .status-display h2 {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            font-weight: 600;
         }
         
         .face-detected {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(67, 233, 123, 0.9);
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.9);
             color: white;
             padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 99px;
+            font-size: 13px;
             font-weight: 600;
             z-index: 10;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 2px 10px rgba(67, 233, 123, 0.3);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .face-not-detected {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 59, 48, 0.9);
+            top: 20px;
+            right: 20px;
+            background: rgba(239, 68, 68, 0.9);
             color: white;
             padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 99px;
+            font-size: 13px;
             font-weight: 600;
             z-index: 10;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 2px 10px rgba(255, 59, 48, 0.3);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .sidebar {
             flex: 1;
+            max-width: 400px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
+        }
+        
+        .attendance-info, .instructions {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
         }
         
         .attendance-info {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            border-left: 4px solid #43e97b;
+            border-left: 4px solid var(--success);
         }
         
         .attendance-info h3 {
-            color: #155724;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-        
-        .attendance-info p {
-            color: #666;
-            margin: 8px 0;
-            font-size: 14px;
-        }
-        
-        .attendance-info strong {
-            color: #333;
+            color: var(--success-dark);
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .instructions {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--primary);
         }
         
         .instructions h3 {
-            color: #667eea;
-            margin-bottom: 12px;
-            font-size: 16px;
+            color: var(--primary);
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .instructions ul {
-            margin-left: 18px;
-            color: #666;
+            margin-left: 20px;
+            color: var(--text-sub);
         }
         
         .instructions li {
-            margin: 8px 0;
-            font-size: 14px;
-            line-height: 1.5;
+            margin: 10px 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
         }
         
         .message {
-            padding: 12px 15px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 16px;
             text-align: center;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 14px;
             animation: slideDown 0.3s ease;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .message.success {
-            background: #d4edda;
-            color: #155724;
+            background: #ECFDF5;
+            color: var(--success-dark);
+            border: 1px solid #A7F3D0;
         }
         
         .message.error {
-            background: #f8d7da;
-            color: #721c24;
+            background: #FEF2F2;
+            color: var(--danger-dark);
+            border: 1px solid #FECACA;
         }
         
         .message.info {
-            background: #d1ecf1;
-            color: #0c5460;
+            background: #EFF6FF;
+            color: #1E40AF;
+            border: 1px solid #BFDBFE;
         }
         
         .message.processing {
-            background: #fff3cd;
-            color: #856404;
+            background: #FFFBEB;
+            color: #92400E;
+            border: 1px solid #FDE68A;
         }
         
-        canvas {
-            display: none;
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        
+        canvas { display: none; }
         
         @media (max-width: 1024px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+            }
+
             .main-content {
                 flex-direction: column;
+                padding: 20px;
+                height: auto;
+                overflow: visible;
+            }
+            
+            .sidebar {
+                max-width: 100%;
+            }
+            
+            .camera-container {
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .top-bar {
+                padding: 15px 16px;
+                flex-wrap: wrap;
+                gap: 15px;
+                justify-content: center;
+            }
+            
+            .back-btn {
+                position: absolute;
+                left: 16px;
+                top: 20px;
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+
+            .header {
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.1rem;
+                justify-content: center;
+            }
+            
+            /* Hide the spacer div */
+            .top-bar > div:last-child {
+                display: none;
+            }
+            
+            .camera-container {
+                min-height: 300px;
+                padding: 12px;
+                border-radius: 20px;
+            }
+
+            .face-detected, .face-not-detected {
+                top: 12px;
+                right: 12px;
+                font-size: 11px;
+                padding: 6px 12px;
+            }
+
+            .status-display {
+                padding: 12px;
+                margin-top: 12px;
+            }
+
+            .status-display h2 {
+                font-size: 1rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="top-bar">
-        <a href="{% url 'home' %}" class="back-btn">← Back</a>
+        <a href="{% url 'home' %}" class="back-btn" onclick="window.location.replace(this.href); return false;">← Back</a>
         <div class="header">
             <h1>📸 Face Scanner</h1>
-            <p id="systemTime" style="font-size: 16px; color: #667eea; font-weight: 600; margin-top: 5px;"></p>
+            <p id="systemTime"></p>
         </div>
         <div style="width: 80px;"></div>
     </div>
@@ -298,13 +392,8 @@
                 <div id="detectionIndicator" class="face-not-detected">⚠️ No Face Detected</div>
             </div>
             
-            <div class="action-buttons">
-                <button class="action-btn check-in" id="checkInBtn" disabled>
-                    ✓ Check In
-                </button>
-                <button class="action-btn check-out" id="checkOutBtn" disabled>
-                    ✗ Check Out
-                </button>
+            <div class="status-display">
+                <h2 id="modeDisplay">Initializing...</h2>
             </div>
         </div>
         
@@ -321,8 +410,6 @@
                 <ul>
                     <li>Position your face in the center</li>
                     <li>Wait for face detection (green indicator)</li>
-                    <li>Click Check In or Check Out button</li>
-                    <li>Wait for face recognition</li>
                     <li>Attendance will be marked automatically</li>
                 </ul>
             </div>
@@ -335,8 +422,6 @@
         const overlay = document.getElementById('overlay');
         const ctx = canvas.getContext('2d');
         const overlayCtx = overlay.getContext('2d');
-        const checkInBtn = document.getElementById('checkInBtn');
-        const checkOutBtn = document.getElementById('checkOutBtn');
         const messageBox = document.getElementById('messageBox');
         const attendanceInfo = document.getElementById('attendanceInfo');
         const attendanceDetails = document.getElementById('attendanceDetails');
@@ -344,6 +429,18 @@
         
         let modelsLoaded = false;
         let faceDetected = false;
+        let isProcessing = false;
+
+        // Get action from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action');
+        
+        if (!action) {
+            showMessage('No action specified. Please return to home.', 'error');
+        } else {
+            const modeText = action === 'check_in' ? 'Check In' : 'Check Out';
+            document.getElementById('modeDisplay').textContent = `Scanning for ${modeText}...`;
+        }
         
         // Load face-api.js models
         async function loadModels() {
@@ -422,15 +519,17 @@
                 faceDetected = true;
                 detectionIndicator.className = 'face-detected';
                 detectionIndicator.textContent = '✓ Face Detected';
-                checkInBtn.disabled = false;
-                checkOutBtn.disabled = false;
                 drawDetection(detection);
+
+                // Auto-trigger if action is set and not already processing
+                if (action && !isProcessing) {
+                     scanAndMark(action);
+                }
+
             } else {
                 faceDetected = false;
                 detectionIndicator.className = 'face-not-detected';
                 detectionIndicator.textContent = '⚠️ No Face Detected';
-                checkInBtn.disabled = true;
-                checkOutBtn.disabled = true;
                 overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
             }
             
@@ -443,14 +542,10 @@
         }
         
         // Scan face and mark attendance
-        async function scanAndMark(action) {
-            if (!faceDetected) {
-                showMessage('❌ Please position your face in the camera first!', 'error');
-                return;
-            }
+        async function scanAndMark(actionType) {
+            if (!faceDetected || isProcessing) return;
             
-            checkInBtn.disabled = true;
-            checkOutBtn.disabled = true;
+            isProcessing = true;
             attendanceInfo.style.display = 'none';
             showMessage('🔄 Processing... Please wait.', 'processing');
             
@@ -470,54 +565,41 @@
                     },
                     body: JSON.stringify({
                         image: imageData,
-                        action: action
+                        action: actionType
                     })
                 });
                 
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Check if already done (duplicate check-in/out)
-                    if (result.already_done) {
-                        showMessage(`ℹ️ ${result.message}`, 'info');
-                    } else {
-                        showMessage(`✓ ${result.message}`, 'success');
-                    }
-                    
-                    // Update heading based on action
-                    const actionText = action === 'check_in' ? 'Checked In' : 'Checked Out';
-                    attendanceInfo.querySelector('h3').textContent = `✓ ${actionText}`;
-                    
-                    // Show attendance details
-                    attendanceDetails.innerHTML = `
-                        <p><strong>User:</strong> ${result.user.display_name}</p>
-                        <p><strong>Email:</strong> ${result.user.email}</p>
-                        <p><strong>Action:</strong> ${result.action.replace('_', ' ').toUpperCase()}</p>
-                        <p><strong>Time:</strong> ${result.time}</p>
-                    `;
-                    attendanceInfo.style.display = 'block';
+                    // Show brief success message
+                    showMessage('✓ Success! Redirecting...', 'success');
+
+                    // Redirect quickly
+                    setTimeout(() => {
+                        // Store notification data for the home page
+                        const notificationData = {
+                            status: 'success',
+                            action: result.action,
+                            user: result.user.display_name,
+                            already_done: result.already_done
+                        };
+                        sessionStorage.setItem('attendance_notification', JSON.stringify(notificationData));
+
+                        // Redirect to home replacing current history
+                        window.location.replace("{% url 'home' %}");
+                    }, 500);
+
                 } else {
                     showMessage('❌ ' + result.error, 'error');
+                    // Allow retry after error delay
+                    setTimeout(() => { isProcessing = false; }, 2000);
                 }
             } catch (err) {
                 showMessage('Network error: ' + err.message, 'error');
-            }
-            
-            // Re-enable buttons only if face is still detected
-            if (faceDetected) {
-                checkInBtn.disabled = false;
-                checkOutBtn.disabled = false;
+                setTimeout(() => { isProcessing = false; }, 2000);
             }
         }
-        
-        // Button click handlers
-        checkInBtn.addEventListener('click', function() {
-            scanAndMark('check_in');
-        });
-        
-        checkOutBtn.addEventListener('click', function() {
-            scanAndMark('check_out');
-        });
         
         // Update system time display
         function updateSystemTime() {

@@ -1,200 +1,349 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select User - Face Registration</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #794BC4;
+            --primary-dark: #5b21b6;
+            --success: #10B981;
+            --success-dark: #047857;
+            --danger: #EF4444;
+            --danger-dark: #b91c1c;
+            --warning: #F59E0B;
+            --warning-dark: #D97706;
+            --surface: #ffffff;
+            --bg: #f1f5f9;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(121, 75, 196, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 40px 20px;
+            color: var(--text-main);
         }
-        
+
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
         }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
+
+        .header-section {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
+
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        
+
         .back-btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             padding: 10px 20px;
-            background: #667eea;
-            color: white;
+            background: white;
+            color: var(--text-main);
             text-decoration: none;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            border-radius: 99px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
         .back-btn:hover {
-            background: #5568d3;
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateX(-2px);
         }
-        
-        .search-box {
-            margin-bottom: 20px;
+
+        .title-area h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
         }
-        
-        .search-box select {
+
+        .title-area p {
+            color: var(--text-sub);
+            font-size: 1rem;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 600px;
             width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            background: white;
-            cursor: pointer;
         }
-        
-        .search-box select:focus {
+
+        .search-input {
+            width: 100%;
+            padding: 16px 20px 16px 50px;
+            border-radius: 16px;
+            border: 2px solid var(--border);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: var(--bg);
+        }
+
+        .search-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary);
+            background: var(--surface);
+            box-shadow: 0 0 0 4px rgba(121, 75, 196, 0.1);
         }
-        
+
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-sub);
+            font-size: 1.2rem;
+        }
+
         .user-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
         }
-        
+
         .user-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 24px;
             text-decoration: none;
             color: inherit;
-            border: 2px solid transparent;
+            border: 1px solid var(--border);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
         }
-        
+
         .user-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
         }
-        
-        .user-icon {
-            font-size: 3em;
-            margin-bottom: 10px;
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            flex-shrink: 0;
         }
-        
-        .user-card h3 {
-            color: #333;
-            margin-bottom: 5px;
+
+        .user-info {
+            flex: 1;
+            min-width: 0; /* Prevent text overflow */
         }
-        
-        .user-card p {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 10px;
+
+        .user-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        
-        .face-status {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: bold;
+
+        .user-email {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        
-        .face-status.complete {
-            background: #43e97b;
-            color: white;
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
-        
-        .face-status.partial {
-            background: #feca57;
-            color: white;
+
+        .status-badge.registered {
+            background: #ECFDF5;
+            color: var(--success-dark);
         }
-        
-        .face-status.none {
-            background: #ff6b6b;
-            color: white;
+
+        .status-badge.partial {
+            background: #FFFBEB;
+            color: var(--warning-dark);
         }
-        
-        .no-users {
+
+        .status-badge.not-registered {
+            background: #FEF2F2;
+            color: var(--danger-dark);
+        }
+
+        .no-results {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: 60px;
+            color: var(--text-sub);
+            background: var(--surface);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            display: none;
         }
-        
-        button[type="submit"] {
-            transition: background 0.3s, transform 0.2s;
+
+        .no-results h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
         }
-        
-        button[type="submit"]:hover {
-            background: #5568d3 !important;
-            transform: translateY(-2px);
-        }
-        
-        button[type="submit"]:active {
-            transform: translateY(0);
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            .header-section {
+                padding: 20px;
+            }
+
+            .user-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="{% url 'home' %}" class="back-btn">← Back to Home</a>
-        
-        <div class="header">
-            <h1>{{ title }}</h1>
+        <div class="header-section">
+            <div class="top-nav">
+                <a href="{% url 'home' %}" class="back-btn">← Back to Home</a>
+            </div>
+            
+            <div class="title-area">
+                <h1>Select User</h1>
+                <p>Choose a user to register their face data for attendance</p>
+            </div>
+
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="userSearch" class="search-input" placeholder="Search by name, email or ID...">
+            </div>
         </div>
-        
-        <div class="search-box">
-            <form method="GET" action="{% url 'select_user_registration' %}" id="userSelectForm">
-                <select name="user_id" id="userSelect" onchange="this.form.submit()">
-                    <option value="">-- Select a user --</option>
-                    {% for user in all_users %}
-                    <option value="{{ user.id }}" {% if selected_user and selected_user.id == user.id %}selected{% endif %}>
-                        {{ user.get_display_name }} ({{ user.email }})
-                    </option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
-        
-        {% if selected_user %}
+
         <div class="user-grid" id="userGrid">
-            <a href="{% url 'register_face' selected_user.id %}" class="user-card" style="max-width: 350px; margin: 0 auto;">
-                <div class="user-icon">👤</div>
-                <h3>{{ selected_user.get_display_name }}</h3>
-                <p>{{ selected_user.email }}</p>
-                {% if selected_user.face_images_count >= 25 %}
-                    <span class="face-status complete">✓ {{ selected_user.face_images_count }} images</span>
-                {% elif selected_user.face_images_count > 0 %}
-                    <span class="face-status partial">{{ selected_user.face_images_count }}/25 images</span>
-                {% else %}
-                    <span class="face-status none">No images</span>
-                {% endif %}
+            {% for user in all_users %}
+            <a href="{% url 'register_face' user.id %}" class="user-card" 
+               data-name="{{ user.get_display_name|lower }}" 
+               data-email="{{ user.email|lower }}"
+               data-id="{{ user.api_user_id|lower }}">
+                
+                <div class="user-avatar">
+                    {% if user.first_name %}
+                        {{ user.first_name|first }}{{ user.last_name|first }}
+                    {% else %}
+                        {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
+                
+                <div class="user-info">
+                    <div class="user-name">{{ user.get_display_name }}</div>
+                    <div class="user-email">{{ user.email }}</div>
+                    
+                    {% if user.face_images_count >= 25 %}
+                        <div class="status-badge registered">
+                            <span>✓</span> Registered
+                        </div>
+                    {% elif user.face_images_count > 0 %}
+                        <div class="status-badge partial">
+                            <span>⚠️</span> Partial ({{ user.face_images_count }}/25)
+                        </div>
+                    {% else %}
+                        <div class="status-badge not-registered">
+                            <span>○</span> Not Registered
+                        </div>
+                    {% endif %}
+                </div>
             </a>
+            {% endfor %}
         </div>
-        {% endif %}
+
+        <div id="noResults" class="no-results">
+            <h3>No users found</h3>
+            <p>Try adjusting your search terms</p>
+        </div>
     </div>
-    
+
     <script>
-        // Auto-focus on select dropdown
-        document.getElementById('userSelect').focus();
+        const searchInput = document.getElementById('userSearch');
+        const userGrid = document.getElementById('userGrid');
+        const userCards = document.querySelectorAll('.user-card');
+        const noResults = document.getElementById('noResults');
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            userCards.forEach(card => {
+                const name = card.dataset.name;
+                const email = card.dataset.email;
+                const id = card.dataset.id;
+
+                if (name.includes(searchTerm) || email.includes(searchTerm) || id.includes(searchTerm)) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                userGrid.style.display = 'none';
+                noResults.style.display = 'block';
+            } else {
+                userGrid.style.display = 'grid';
+                noResults.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>

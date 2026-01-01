@@ -4,123 +4,373 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance System - Home</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #794BC4;
+            --primary-dark: #5b21b6;
+            --success: #10B981;
+            --success-dark: #047857;
+            --danger: #EF4444;
+            --danger-dark: #b91c1c;
+            --surface: #ffffff;
+            --bg: #f1f5f9;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(121, 75, 196, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            color: var(--text-main);
         }
-        
+
         .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: var(--surface);
+            border-radius: 32px;
+            padding: 60px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 20px 25px -5px rgba(0, 0, 0, 0.05);
             max-width: 800px;
             width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2.5em;
+
+        .logo-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 50px;
         }
-        
+
+        .logo-area img {
+            width: 140px;
+            height: auto;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
+        }
+
         .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 40px;
-            font-size: 1.1em;
+            color: var(--text-sub);
+            font-size: 1.125rem;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            margin: 0;
         }
-        
+
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+            width: 100%;
         }
-        
+
         .card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 32px;
+            border-radius: 24px;
             text-decoration: none;
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
         }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        
+
         .card-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+            transition: transform 0.3s ease;
         }
-        
+
         .card h2 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* Check In Styling */
+        .card.check-in {
+            background: #ECFDF5;
+            border-color: #A7F3D0;
+            color: #065F46;
+        }
+
+        .card.check-in:hover {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -8px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Check Out Styling */
+        .card.check-out {
+            background: #FEF2F2;
+            border-color: #FECACA;
+            color: #991B1B;
+        }
+
+        .card.check-out:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -8px rgba(239, 68, 68, 0.4);
+        }
+
+        .card:hover .card-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .register-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 12px 24px;
+            border-radius: 99px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .register-link:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            background: #faf5ff;
+            transform: translateY(-1px);
+        }
+
+        .message-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: 90%;
+            max-width: 600px;
         }
         
-        .card p {
-            font-size: 0.9em;
-            opacity: 0.9;
+        .message {
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            animation: slideDown 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         
-        .card.primary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
         }
         
-        .card.secondary {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
-        .card.tertiary {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+                height: auto;
+                min-height: 100vh;
+                align-items: flex-start; /* Allow scrolling on small screens */
+            }
+
+            .container {
+                padding: 40px 24px;
+                margin: 40px 0; /* Add margin for top/bottom spacing */
+            }
+
+            .logo-area img {
+                width: 100px;
+                margin-bottom: 16px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr; /* Stack cards vertically */
+                gap: 16px;
+                max-width: 400px; /* Limit width for better readability */
+            }
+
+            .card {
+                padding: 24px;
+                flex-direction: row; /* Horizontal layout for mobile */
+                align-items: center;
+                justify-content: flex-start;
+                text-align: left;
+                gap: 20px;
+            }
+
+            .card-icon {
+                font-size: 2.5rem;
+                margin-bottom: 0; /* Reset bottom margin */
+                flex-shrink: 0; /* Prevent icon from shrinking */
+            }
+
+            .card h2 {
+                font-size: 1.25rem;
+                margin: 0; /* Reset margin */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 32px 20px;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="messageContainer" class="message-container"></div>
+
     <div class="container">
-        <div style="text-align: center; margin-bottom: 40px;">
-            <img src="https://perfectofficeapp.proxipreview.com/assets/theme/images/logo.svg" alt="Logo" style="width: 160px; height: 140px; display: block; margin: 0 auto;">
-            <p class="subtitle" style="margin: -25px 0 0 0;">Face Recognition Based Attendance</p>
+        <div class="logo-area">
+            <img src="https://perfectofficeapp.proxipreview.com/assets/theme/images/logo.svg" alt="Logo">
+            <p class="subtitle">Face Recognition Based Attendance</p>
         </div>
         
         <div class="cards">
-            <a href="{% url 'attendance_scanner' %}" class="card primary">
-                <div class="card-icon">👤</div>
-                <h2>Mark Attendance</h2>
-                <p>Check-in or Check-out using face recognition</p>
+            <a href="{% url 'attendance_scanner' %}?action=check_in" class="card check-in" onclick="window.location.replace(this.href); return false;">
+                <div class="card-icon">🏢</div>
+                <h2>Check In</h2>
             </a>
             
-            <!-- <div class="card primary" style="opacity: 0.5; cursor: not-allowed; pointer-events: none;">
-                <div class="card-icon">👤</div>
-                <h2>Mark Attendance</h2>
-                <p>Check-in or Check-out using face recognition</p>
-            </div> -->
-
-            <a href="{% url 'select_user_registration' %}" class="card secondary">
-                <div class="card-icon">📸</div>
-                <h2>Register Face</h2>
-                <p>Register your face for attendance</p>
+            <a href="{% url 'attendance_scanner' %}?action=check_out" class="card check-out" onclick="window.location.replace(this.href); return false;">
+                <div class="card-icon">🏠</div>
+                <h2>Check Out</h2>
             </a>
         </div>
+
+        <a href="{% url 'select_user_registration' %}" class="register-link">Register New Face</a>
     </div>
+
+    <script>
+        function showNotification() {
+            const messageContainer = document.getElementById('messageContainer');
+            let action, user, alreadyDone, actionText;
+            let hasNotification = false;
+
+            // 1. Check Session Storage (Preferred for history.back())
+            const storedData = sessionStorage.getItem('attendance_notification');
+            if (storedData) {
+                const data = JSON.parse(storedData);
+                action = data.action;
+                user = data.user;
+                alreadyDone = data.already_done;
+                hasNotification = true;
+                // Clear immediately so it doesn't show again on refresh
+                sessionStorage.removeItem('attendance_notification');
+            } 
+            // 2. Check URL Parameters (Fallback)
+            else {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('status') === 'success') {
+                    action = urlParams.get('action');
+                    user = urlParams.get('user');
+                    alreadyDone = urlParams.get('already_done') === 'true';
+                    hasNotification = true;
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
+
+            if (hasNotification) {
+                actionText = action === 'check_in' ? 'Checked In' : 'Checked Out';
+                
+                if (alreadyDone) {
+                    messageContainer.innerHTML = `
+                        <div class="message info" style="background: #d1ecf1; color: #0c5460; border-left: 5px solid #17a2b8;">
+                            <span>ℹ️</span>
+                            <span><strong>${user}</strong> is already <strong>${actionText}</strong></span>
+                        </div>
+                    `;
+                } else {
+                    messageContainer.innerHTML = `
+                        <div class="message success">
+                            <span>✓</span>
+                            <span>Attendance Marked: <strong>${user}</strong> successfully <strong>${actionText}</strong></span>
+                        </div>
+                    `;
+                }
+                
+                // Hide after 5 seconds
+                setTimeout(() => {
+                    messageContainer.style.transition = 'opacity 0.5s';
+                    messageContainer.style.opacity = '0';
+                    setTimeout(() => {
+                        messageContainer.innerHTML = '';
+                        messageContainer.style.opacity = '1';
+                    }, 500);
+                }, 5000);
+            }
+        }
+
+        // Listen for both load and pageshow (for back button cache)
+        window.addEventListener('pageshow', showNotification);
+        document.addEventListener('DOMContentLoaded', showNotification);
+
+        // Preload face-api models for faster scanning
+        async function loadModels() {
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'),
+                    faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'),
+                    faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/')
+                ]);
+                console.log('Face API models preloaded');
+            } catch (err) {
+                console.error('Error preloading models:', err);
+            }
+        }
+        
+        // Start loading immediately
+        loadModels();
+    </script>
 </body>
 </html>

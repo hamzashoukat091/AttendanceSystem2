@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +6,22 @@
     <title>Register Face - {{ user.get_display_name }}</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #794BC4;
+            --primary-dark: #5b21b6;
+            --success: #10B981;
+            --success-dark: #047857;
+            --danger: #EF4444;
+            --danger-dark: #b91c1c;
+            --surface: #ffffff;
+            --bg: #f1f5f9;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,96 +29,91 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(121, 75, 196, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
             height: 100vh;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
+            color: var(--text-main);
         }
         
         .top-bar {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
         }
         
         .back-btn {
-            padding: 8px 20px;
-            background: #667eea;
-            color: white;
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            color: var(--text-main);
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 99px;
             font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
         .back-btn:hover {
-            background: #5568d3;
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateX(-2px);
         }
         
-        .user-info {
+        .header {
             text-align: center;
         }
         
-        .user-info h2 {
-            font-size: 18px;
-            color: #333;
-            margin-bottom: 2px;
+        .header h1 {
+            font-size: 1.25rem;
+            color: var(--text-main);
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .user-info p {
-            font-size: 13px;
-            color: #666;
+        .header p {
+            font-size: 0.875rem;
+            color: var(--text-sub);
+            margin: 4px 0 0 0;
+            font-weight: 500;
         }
         
         .main-content {
             flex: 1;
             display: flex;
-            gap: 20px;
-            padding: 20px;
+            gap: 30px;
+            padding: 30px 40px;
             overflow: hidden;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
         }
         
         .camera-container {
-            flex: 3;
+            flex: 2;
             display: flex;
             flex-direction: column;
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-        }
-        
-        .progress-section {
-            margin-bottom: 15px;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 35px;
-            background: #e0e0e0;
-            border-radius: 17px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
-            transition: width 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        
-        #messageBox {
-            min-height: 20px;
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            position: relative;
         }
         
         .video-wrapper {
@@ -111,9 +122,11 @@
             align-items: center;
             justify-content: center;
             background: #000;
-            border-radius: 10px;
+            border-radius: 16px;
             overflow: hidden;
             position: relative;
+            width: 100%;
+            height: 100%;
         }
         
         video {
@@ -121,412 +134,359 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
-            position: absolute;
         }
         
         #overlay {
             position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             transform: scaleX(-1);
         }
         
+        .status-display {
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .progress-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 99px;
+        }
+        
+        .face-detected {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .face-not-detected {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .position-guide {
             position: absolute;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(102, 126, 234, 0.85);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 15px 30px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 99px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(8px);
+            z-index: 10;
             text-align: center;
-            z-index: 10;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
-            animation: pulseGuide 1s infinite;
-        }
-        
-        @keyframes pulseGuide {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.05); }
-        }
-        
-        .face-detected {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(67, 233, 123, 0.75);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-        }
-        
-        .face-not-detected {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 59, 48, 0.75);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-        }
-        
-        .controls {
-            margin-top: 15px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        
-        button {
-            padding: 12px 35px;
-            font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: bold;
-        }
-        
-        .btn-capture {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .btn-capture:hover:not(:disabled) {
-            transform: scale(1.05);
-        }
-        
-        .btn-capture:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .btn-done {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            color: white;
-        }
-        
-        .btn-done:hover {
-            transform: scale(1.05);
+            display: none;
         }
         
         .sidebar {
             flex: 1;
+            max-width: 400px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-            max-height: calc(100vh - 100px);
+            gap: 20px;
+        }
+        
+        .control-panel {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-success:hover {
+            background: var(--success-dark);
+            transform: translateY(-2px);
         }
         
         .instructions {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            border-left: 4px solid #ffc107;
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
         }
         
         .instructions h3 {
-            color: #856404;
-            margin-bottom: 12px;
-            font-size: 16px;
+            color: var(--primary);
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .instructions ul {
-            margin-left: 18px;
-            color: #666;
+            margin-left: 20px;
+            color: var(--text-sub);
         }
         
         .instructions li {
-            margin: 8px 0;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        .tips {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            border-left: 4px solid #667eea;
-        }
-        
-        .tips h3 {
-            color: #667eea;
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-        
-        .tips p {
-            color: #666;
-            font-size: 14px;
+            margin: 10px 0;
+            font-size: 0.95rem;
             line-height: 1.6;
+        }
+
+        .tips {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .tips h3 {
+            color: var(--text-main);
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tips p {
             margin: 8px 0;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tips strong {
+            color: var(--text-main);
         }
         
         .message {
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 16px;
             text-align: center;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 14px;
             animation: slideDown 0.3s ease;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .message.success {
-            background: #d4edda;
-            color: #155724;
+            background: #ECFDF5;
+            color: var(--success-dark);
+            border: 1px solid #A7F3D0;
         }
         
         .message.error {
-            background: #f8d7da;
-            color: #721c24;
+            background: #FEF2F2;
+            color: var(--danger-dark);
+            border: 1px solid #FECACA;
         }
         
-        canvas {
-            display: none;
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Tablet and below */
+        canvas { display: none; }
+        
         @media (max-width: 1024px) {
-            .main-content {
-                flex-direction: column;
-                padding: 15px;
-                gap: 15px;
-            }
-            
-            .camera-container {
-                flex: 1;
-                min-height: 60vh;
-            }
-            
-            .sidebar {
-                flex: 0;
-                max-height: 250px;
-                overflow-y: auto;
-            }
-            
-            .position-guide {
-                font-size: 16px;
-                padding: 12px 25px;
-            }
-        }
-        
-        /* Mobile landscape and small tablets */
-        @media (max-width: 768px) {
             body {
                 height: auto;
                 min-height: 100vh;
             }
-            
-            .top-bar {
-                padding: 12px 20px;
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-            
-            .user-info h2 {
-                font-size: 16px;
-            }
-            
-            .user-info p {
-                font-size: 12px;
-            }
-            
+
             .main-content {
-                padding: 10px;
-                gap: 10px;
-            }
-            
-            .camera-container {
-                padding: 15px;
-                min-height: 50vh;
-            }
-            
-            .progress-bar {
-                height: 30px;
-            }
-            
-            .progress-fill {
-                font-size: 14px;
-            }
-            
-            .controls {
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-            
-            button {
-                padding: 10px 25px;
-                font-size: 14px;
+                flex-direction: column;
+                padding: 20px;
+                height: auto;
+                overflow: visible;
             }
             
             .sidebar {
-                max-height: 200px;
+                max-width: 100%;
             }
             
-            .instructions, .tips {
-                padding: 15px;
-            }
-            
-            .instructions h3, .tips h3 {
-                font-size: 14px;
-            }
-            
-            .instructions li, .tips p {
-                font-size: 13px;
-            }
-            
-            .position-guide {
-                font-size: 14px;
-                padding: 10px 20px;
-                bottom: 15px;
-            }
-            
-            .face-detected, .face-not-detected {
-                font-size: 11px;
-                padding: 5px 10px;
+            .camera-container {
+                min-height: 400px;
             }
         }
-        
-        /* Mobile portrait */
-        @media (max-width: 480px) {
+
+        @media (max-width: 640px) {
             .top-bar {
-                padding: 10px 15px;
+                padding: 15px 16px;
+                flex-wrap: wrap;
+                gap: 15px;
+                justify-content: center;
             }
             
             .back-btn {
-                padding: 6px 15px;
-                font-size: 13px;
+                position: absolute;
+                left: 16px;
+                top: 20px;
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+
+            .header {
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.1rem;
+                justify-content: center;
             }
             
-            .user-info h2 {
-                font-size: 14px;
-            }
-            
-            .user-info p {
-                font-size: 11px;
-            }
-            
-            .main-content {
-                padding: 8px;
-                gap: 8px;
+            /* Hide the spacer div */
+            .top-bar > div:last-child {
+                display: none;
             }
             
             .camera-container {
+                min-height: 300px;
                 padding: 12px;
-                border-radius: 12px;
+                border-radius: 20px;
             }
-            
-            .progress-bar {
-                height: 25px;
-                margin-bottom: 8px;
-            }
-            
-            .progress-fill {
-                font-size: 12px;
-            }
-            
-            .video-wrapper {
-                border-radius: 8px;
-            }
-            
-            .controls {
-                gap: 8px;
-                margin-top: 12px;
-            }
-            
-            button {
-                padding: 8px 20px;
-                font-size: 13px;
-                flex: 1;
-                min-width: 120px;
-            }
-            
-            .sidebar {
-                max-height: 180px;
-            }
-            
-            .instructions, .tips {
-                padding: 12px;
-                border-radius: 10px;
-            }
-            
-            .instructions h3, .tips h3 {
-                font-size: 13px;
-                margin-bottom: 8px;
-            }
-            
-            .instructions li, .tips p {
-                font-size: 12px;
-                margin: 6px 0;
-            }
-            
-            .position-guide {
-                font-size: 12px;
-                padding: 8px 15px;
-                bottom: 10px;
-                border-radius: 10px;
-            }
-            
-            .position-guide small {
-                font-size: 10px;
-            }
-            
+
             .face-detected, .face-not-detected {
-                font-size: 10px;
-                padding: 4px 8px;
-                top: 8px;
-                right: 8px;
-            }
-            
-            .message {
-                font-size: 12px;
-                padding: 8px 12px;
-            }
-        }
-        
-        /* Very small screens */
-        @media (max-width: 360px) {
-            .top-bar {
-                padding: 8px 10px;
-            }
-            
-            .camera-container {
-                padding: 10px;
-            }
-            
-            button {
-                padding: 7px 15px;
-                font-size: 12px;
-                min-width: 100px;
-            }
-            
-            .position-guide {
+                top: 12px;
+                right: 12px;
                 font-size: 11px;
                 padding: 6px 12px;
+            }
+
+            .status-display {
+                padding: 12px;
+                margin-top: 12px;
+                flex-direction: column;
+                gap: 12px;
             }
         }
     </style>
@@ -534,8 +494,8 @@
 <body>
     <div class="top-bar">
         <a href="{% url 'select_user_registration' %}" class="back-btn">← Back</a>
-        <div class="user-info">
-            <h2>👤 {{ user.get_display_name }}</h2>
+        <div class="header">
+            <h1>👤 {{ user.get_display_name }}</h1>
             <p>{{ user.email }}</p>
         </div>
         <div style="width: 80px;"></div>
@@ -543,35 +503,47 @@
     
     <div class="main-content">
         <div class="camera-container">
-            <div class="progress-section">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill" style="width: 0%">
-                        <span id="progressText">0/{{ required_count }}</span>
-                    </div>
-                </div>
-                <div id="messageBox"></div>
-            </div>
-            
             <div class="video-wrapper">
                 <video id="video" autoplay playsinline></video>
                 <canvas id="overlay"></canvas>
                 <canvas id="canvas"></canvas>
-                <div id="detectionIndicator"></div>
-                <div id="positionGuide" class="position-guide" style="display:none;"></div>
+                <div id="detectionIndicator" class="face-not-detected">⚠️ No Face Detected</div>
+                <div id="positionGuide" class="position-guide"></div>
             </div>
             
-            <div class="controls">
-                <button class="btn-capture" id="startBtn">{% if has_existing_face %}🔄 Recapture Face{% else %}▶️ Start Auto Capture{% endif %}</button>
-                <button class="btn-capture" id="stopBtn" style="display:none; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);">⏸️ Stop Capture</button>
-                <button class="btn-done" id="doneBtn" style="display:none;">✓ Done</button>
+            <div class="status-display">
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Capture Progress</span>
+                        <span id="progressText">0/{{ required_count }}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div class="sidebar">
+            <div id="messageBox"></div>
+            
+            <div class="control-panel">
+                <button class="btn-primary" id="startBtn">
+                    {% if has_existing_face %}🔄 Recapture Face{% else %}▶️ Start Auto Capture{% endif %}
+                </button>
+                <button class="btn-danger" id="stopBtn" style="display:none;">
+                     ⏸️ Stop Capture
+                </button>
+                <button class="btn-success" id="doneBtn" style="display:none;">
+                    ✓ Done
+                </button>
+            </div>
+
             {% if has_existing_face %}
-            <div class="instructions" style="border-left: 4px solid #ff6b6b; background: #fff5f5;">
-                <p style="color: #c53030; font-weight: bold; margin: 10px 0;">This user already has {{ current_count }} face images registered.</p>
-                <p style="color: #666; font-size: 13px; margin: 10px 0;">Click "Recapture Face" to register face again. The count will start from 0.</p>
+            <div class="instructions" style="border-left-color: var(--danger); background: #FEF2F2;">
+                <h3 style="color: var(--danger);">⚠️ Existing Data</h3>
+                <p style="color: var(--danger-dark); font-weight: 500; margin-bottom: 8px;">This user already has {{ current_count }} face images registered.</p>
+                <p style="color: var(--text-sub); font-size: 0.9rem;">Click "Recapture Face" to register face again. The count will start from 0.</p>
             </div>
             {% endif %}
             
@@ -588,11 +560,11 @@
             
             <div class="tips">
                 <h3>💡 Position Guides</h3>
-                <p><strong>Images 1-5:</strong> Look straight ahead (Front)</p>
-                <p><strong>Images 6-10:</strong> Look up slightly</p>
-                <p><strong>Images 11-15:</strong> Look down slightly</p>
-                <p><strong>Images 16-20:</strong> Turn head left</p>
-                <p><strong>Images 21-25:</strong> Turn head right</p>
+                <p><strong>Images 1-5:</strong> <span>Look straight ahead (Front)</span></p>
+                <p><strong>Images 6-10:</strong> <span>Look up slightly</span></p>
+                <p><strong>Images 11-15:</strong> <span>Look down slightly</span></p>
+                <p><strong>Images 16-20:</strong> <span>Turn head left</span></p>
+                <p><strong>Images 21-25:</strong> <span>Turn head right</span></p>
             </div>
         </div>
     </div>
@@ -727,7 +699,7 @@
                 const wasFaceDetected = faceDetected;
                 faceDetected = false;
                 detectionIndicator.className = 'face-not-detected';
-                detectionIndicator.textContent = '✗ No Face Detected';
+                detectionIndicator.textContent = '⚠️ No Face Detected';
                 overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
                 
                 // If capturing and face is lost, show warning but keep capturing active
@@ -759,7 +731,8 @@
             
             if (currentCount >= requiredCount) {
                 stopCapture();
-                doneBtn.style.display = 'inline-block';
+                doneBtn.style.display = 'flex';
+                startBtn.style.display = 'none';
                 showMessage('✓ All images captured! Click Done to finish.', 'success');
             }
         }
@@ -781,7 +754,7 @@
         
         // Capture and save image
         async function captureImage() {
-            if (!faceDetected) {
+            if (!faceDetected || currentCount >= requiredCount) {
                 return;
             }
             
@@ -820,7 +793,7 @@
         }
         
         // Auto capture loop
-        let captureInterval;
+        let captureTimeout;
         async function startAutoCapture() {
             if (!modelsLoaded) {
                 showMessage('Please wait for models to load', 'error');
@@ -837,7 +810,7 @@
                 startBtn.disabled = true;
                 
                 try {
-                    const deleteResponse = await fetch(`/delete-face-data/${userId}/`, {
+                    const deleteResponse = await fetch('{% url "delete_face_data" user.id %}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -867,25 +840,39 @@
             
             isCapturing = true;
             startBtn.style.display = 'none';
-            stopBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'flex';
+            doneBtn.style.display = 'none';
             showMessage('Auto-capture started. Position your face!', 'success');
             showPositionGuide();
             
-            // Capture every 2 seconds when face is detected
-            captureInterval = setInterval(async () => {
-                if (faceDetected && currentCount < requiredCount && isCapturing) {
+            // Recursive capture loop to prevent race conditions
+            const captureLoop = async () => {
+                if (!isCapturing) return;
+
+                if (faceDetected && currentCount < requiredCount) {
                     await captureImage();
-                } else if (!faceDetected && isCapturing) {
+                } else if (!faceDetected) {
                     // Face not detected but still capturing - show waiting message
                     console.log('Waiting for face detection to continue capture...');
                 }
-            }, 2000);
+
+                // Schedule next capture only if still capturing and not done
+                if (isCapturing && currentCount < requiredCount) {
+                    captureTimeout = setTimeout(captureLoop, 2000);
+                }
+            };
+
+            // Start the loop
+            captureLoop();
         }
         
         function stopCapture() {
             isCapturing = false;
-            clearInterval(captureInterval);
-            startBtn.style.display = 'inline-block';
+            if (captureTimeout) {
+                clearTimeout(captureTimeout);
+                captureTimeout = null;
+            }
+            startBtn.style.display = 'flex';
             stopBtn.style.display = 'none';
             showMessage('Auto-capture paused', 'success');
         }
