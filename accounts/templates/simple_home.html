@@ -147,25 +147,29 @@
         }
 
         .register-link {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: var(--text-sub);
             text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            padding: 12px 24px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            padding: 10px 20px;
             border-radius: 99px;
-            background: white;
-            border: 1px solid #e2e8f0;
+            background: transparent;
+            border: 1px solid transparent;
             transition: all 0.2s ease;
+            opacity: 0.7;
         }
 
         .register-link:hover {
+            opacity: 1;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             color: var(--primary);
-            border-color: var(--primary);
-            background: #faf5ff;
-            transform: translateY(-1px);
         }
 
         .message-container {
@@ -287,7 +291,7 @@
             </a>
         </div>
 
-        <a href="{% url 'select_user_registration' %}" class="register-link">Register New Face</a>
+        <a href="{% url 'select_user_registration' %}" class="register-link">Register</a>
     </div>
 
     <script>
