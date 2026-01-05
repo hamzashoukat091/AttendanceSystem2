@@ -858,7 +858,7 @@
 
                 // Schedule next capture only if still capturing and not done
                 if (isCapturing && currentCount < requiredCount) {
-                    captureTimeout = setTimeout(captureLoop, 2000);
+                    captureTimeout = setTimeout(captureLoop, 400);
                 }
             };
 
