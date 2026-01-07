@@ -138,7 +138,7 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33):
     # Sort matches by confidence (descending)
     all_matches.sort(key=lambda x: x['confidence'], reverse=True)
     
-    # Log top 10 matches
+    # Log top 5 matches
     logger.info("TOP 5 MATCHING RESULTS:")
     logger.info("-" * 85)
     logger.info(f"{'Rank':<6} {'Username':<20} {'Display Name':<25} {'Distance':<10} {'Confidence':<12} {'Pass'}")
@@ -151,6 +151,16 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33):
             f"{match['distance']:<10.4f} {match['confidence']:>6.2f}%     {passed}"
         )
     
+    # Count how many users passed the threshold
+    passing_count = sum(1 for m in all_matches if m['distance'] <= threshold)
+    
+    if passing_count > 2:
+        logger.info("="*80)
+        logger.warning(f"  [AMBIGUOUS MATCH] - {passing_count} users passed the threshold (> 2).")
+        logger.warning("  Rejecting result to prevent false positive.")
+        logger.info("="*80)
+        return None, None, None
+
     # Check if best match meets threshold
     if best_distance <= threshold:
         confidence = (1.0 - best_distance) * 100  # Convert to percentage
