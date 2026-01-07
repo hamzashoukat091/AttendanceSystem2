@@ -222,11 +222,6 @@ def attendance_scanner(request):
 
 @csrf_exempt
 def recognize_and_mark_attendance(request):
-    """
-    Recognize face and mark attendance using fast embedding comparison.
-    OPTIMIZED: Uses pre-computed embeddings instead of DeepFace.verify()
-    Speed: < 1 second for 50 users (vs 60-120 seconds with old method)
-    """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
     
@@ -248,8 +243,6 @@ def recognize_and_mark_attendance(request):
         temp_image = os.path.join(settings.MEDIA_ROOT, "temp_scan.jpg")
         cv2.imwrite(temp_image, img)
         
-        # Compute embedding for the captured face
-        logger.info("Computing embedding for captured face...")
         query_embedding = compute_face_embedding(temp_image, model_name="SFace")
         
         if query_embedding is None:
@@ -261,28 +254,18 @@ def recognize_and_mark_attendance(request):
                 'error': 'Could not detect face in the image. Please try again with better lighting.'
             })
         
-        # Load all user embeddings from database (FAST: just database queries)
-        logger.info("Loading user embeddings from database...")
         user_embeddings = {}
-        
-        # Only get users with face data
         users_with_faces = CustomUser.objects.filter(has_face_data=True, api_user_id__isnull=False)
         
         for user in users_with_faces:
-            # Get all embeddings for this user
             embeddings = UserFaceEmbedding.objects.filter(user=user).values_list('embedding', flat=True)
             if embeddings:
                 user_embeddings[user.id] = list(embeddings)
         
-        logger.info(f"Loaded embeddings for {len(user_embeddings)} users")
+        DISTANCE_THRESHOLD = 0.33
         
-        # Find best match using cosine similarity (VERY FAST: vector math)
-        DISTANCE_THRESHOLD = 0.30  # Maximum cosine distance allowed (lower = stricter, 0.30 = ~70% confidence minimum)
-        
-        logger.info("\n" + "#"*80)
-        logger.info(f"# FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        logger.info(f"# Action: {action.upper()}")
-        logger.info("#"*80)
+        logger.info(f"FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"Action: {action.upper()}")
         
         user_id, distance, confidence = find_best_match(
             query_embedding, 
@@ -296,7 +279,6 @@ def recognize_and_mark_attendance(request):
         
         if user_id is None:
             logger.warning("RECOGNITION FAILED - No matching face found above threshold")
-            logger.info("#"*80 + "\n")
             return JsonResponse({
                 'success': False,
                 'error': 'Face not recognized. Please register first or try again with better lighting.'
@@ -304,13 +286,6 @@ def recognize_and_mark_attendance(request):
         
         # Get the recognized user
         recognized_user = CustomUser.objects.get(id=user_id)
-        
-        logger.info(f"\n>>> FINAL RESULT: Successfully recognized {recognized_user.get_display_name()} ({recognized_user.username})")
-        logger.info(f">>> Confidence: {confidence:.2f}% | Distance: {distance:.4f} | Threshold: {DISTANCE_THRESHOLD}")
-        
-        # Check existing attendance for today (based on system time)
-        # LOGIC: Day starts at 8:00 AM and ends at 8:00 AM next day.
-        # If current time < 8:00 AM, it belongs to the previous day's attendance cycle.
         now = datetime.now()
         current_time = now.time()
         
@@ -318,9 +293,7 @@ def recognize_and_mark_attendance(request):
             attendance_date = (now - timedelta(days=1)).date()
         else:
             attendance_date = now.date()
-            
-        logger.info(f"Attendance Date calculated as: {attendance_date} (Current time: {now})")
-        
+                    
         # Get or create attendance record for the calculated date
         attendance, created = Attendance.objects.get_or_create(
             user=recognized_user,
@@ -384,10 +357,6 @@ def recognize_and_mark_attendance(request):
                 attendance.status = 'Present'
         
         attendance.save()
-        
-        logger.info(f">>> Attendance marked: {action.upper()} at {current_time.strftime('%H:%M:%S')}")
-        logger.info(f">>> Status updated to: {attendance.status}")
-        logger.info("#"*80 + "\n")
         
         return JsonResponse({
             'success': True,

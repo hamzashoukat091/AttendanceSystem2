@@ -34,7 +34,6 @@ def compute_face_embedding(image_path, model_name="SFace"):
         # DeepFace.represent returns a list of dicts (one per detected face)
         if result and len(result) > 0:
             embedding = result[0]["embedding"]
-            logger.info(f"Computed embedding for {image_path}: {len(embedding)}D vector")
             return embedding
         else:
             logger.warning(f"No face detected in {image_path}")
@@ -95,28 +94,12 @@ def cosine_distance(embedding1, embedding2):
     return 1.0 - similarity
 
 
-def find_best_match(query_embedding, user_embeddings, threshold=0.45):
-    """
-    Find the best matching user for a query face embedding.
-    
-    Args:
-        query_embedding: The face embedding to match (512D vector)
-        user_embeddings: Dict of {user_id: [embeddings_list]} from database
-        threshold: Maximum cosine distance for a valid match (default: 0.45)
-    
-    Returns:
-        tuple: (user_id, distance, confidence) or (None, None, None) if no match
-    """
+def find_best_match(query_embedding, user_embeddings, threshold=0.33):
     from .models import CustomUser
     
     best_user_id = None
     best_distance = float('inf')
-    all_matches = []  # Store all matches for logging
-    
-    logger.info("="*80)
-    logger.info(f"FACE MATCHING ANALYSIS - Threshold: {threshold}")
-    logger.info(f"Comparing against {len(user_embeddings)} users with registered faces")
-    logger.info("="*80)
+    all_matches = []
     
     for user_id, embeddings_list in user_embeddings.items():
         user_best_distance = float('inf')
@@ -156,12 +139,12 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.45):
     all_matches.sort(key=lambda x: x['confidence'], reverse=True)
     
     # Log top 10 matches
-    logger.info("\nTOP 10 MATCHING RESULTS:")
-    logger.info("-" * 80)
-    logger.info(f"{'Rank':<6} {'Username':<20} {'Display Name':<25} {'Distance':<10} {'Confidence':<12} {'Pass?'}")
-    logger.info("-" * 80)
+    logger.info("TOP 5 MATCHING RESULTS:")
+    logger.info("-" * 85)
+    logger.info(f"{'Rank':<6} {'Username':<20} {'Display Name':<25} {'Distance':<10} {'Confidence':<12} {'Pass'}")
+    logger.info("-" * 85)
     
-    for rank, match in enumerate(all_matches[:10], 1):
+    for rank, match in enumerate(all_matches[:5], 1):
         passed = "[PASS]" if match['distance'] <= threshold else "[FAIL]"
         logger.info(
             f"{rank:<6} {match['username']:<20} {match['display_name']:<25} "
@@ -171,20 +154,19 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.45):
     # Check if best match meets threshold
     if best_distance <= threshold:
         confidence = (1.0 - best_distance) * 100  # Convert to percentage
-        logger.info("\n" + "="*80)
-        logger.info(f"[MATCH FOUND]")
+        logger.info("="*80)
+        logger.info(f"  [MATCH FOUND]")
         logger.info(f"  User: {all_matches[0]['display_name']} ({all_matches[0]['username']})")
         logger.info(f"  Distance: {best_distance:.4f} (threshold: {threshold})")
         logger.info(f"  Confidence: {confidence:.2f}%")
-        logger.info(f"  Embeddings checked: {all_matches[0]['embeddings_count']}")
-        logger.info("="*80 + "\n")
+        logger.info("="*80)
         return best_user_id, best_distance, confidence
     else:
-        logger.info("\n" + "="*80)
-        logger.info(f"[NO MATCH] - Best distance {best_distance:.4f} exceeds threshold {threshold}")
+        logger.info("="*80)
+        logger.info(f"  [NO MATCH] - Best distance {best_distance:.4f} exceeds threshold {threshold}")
         if all_matches:
             logger.info(f"  Closest was: {all_matches[0]['display_name']} with {all_matches[0]['confidence']:.2f}% confidence")
-        logger.info("="*80 + "\n")
+        logger.info("="*80)
         return None, None, None
 
 
