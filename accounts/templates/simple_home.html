@@ -60,7 +60,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 20px;
         }
 
         .logo-area img {
@@ -76,6 +75,29 @@
             font-weight: 500;
             letter-spacing: -0.01em;
             margin: 0;
+        }
+
+        .clock-container {
+            text-align: center;
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+
+        .live-clock {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        .live-date {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            margin-top: 4px;
+            font-weight: 500;
         }
 
         .cards {
@@ -275,6 +297,11 @@
         <div class="logo-area">
             <img src="https://perfectofficeapp.proxipreview.com/assets/theme/images/logo.svg" alt="Logo">
             <p class="subtitle">Face Recognition Based Attendance</p>
+            
+            <div class="clock-container">
+                <div id="liveClock" class="live-clock">--:--:--</div>
+                <div id="liveDate" class="live-date">...</div>
+            </div>
         </div>
         
         <div id="messageContainer" class="message-container"></div>
@@ -295,6 +322,18 @@
     </div>
 
     <script>
+        function updateClock() {
+            const now = new Date();
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            
+            document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-US', timeOptions);
+            document.getElementById('liveDate').textContent = now.toLocaleDateString('en-US', dateOptions);
+        }
+        
+        setInterval(updateClock, 1000);
+        updateClock();
+
         function showNotification() {
             const messageContainer = document.getElementById('messageContainer');
             let action, user, alreadyDone, actionText;
