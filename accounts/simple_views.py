@@ -239,8 +239,10 @@ def recognize_and_mark_attendance(request):
         if img is None:
             return JsonResponse({'success': False, 'error': 'Failed to decode image'})
         
-        # Save temporary image
-        temp_image = os.path.join(settings.MEDIA_ROOT, "temp_scan.jpg")
+        # Save temporary image with unique name to prevent race conditions
+        import uuid
+        filename = f"temp_scan_{uuid.uuid4()}.jpg"
+        temp_image = os.path.join(settings.MEDIA_ROOT, filename)
         cv2.imwrite(temp_image, img)
         
         query_embedding = compute_face_embedding(temp_image, model_name="SFace")
@@ -248,7 +250,10 @@ def recognize_and_mark_attendance(request):
         if query_embedding is None:
             # Clean up temp file
             if os.path.exists(temp_image):
-                os.remove(temp_image)
+                try:
+                    os.remove(temp_image)
+                except Exception:
+                    pass
             return JsonResponse({
                 'success': False,
                 'error': 'Could not detect face in the image. Please try again with better lighting.'

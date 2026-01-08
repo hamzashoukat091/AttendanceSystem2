@@ -512,24 +512,68 @@
         }
         
         // Continuous face detection loop
+        let consecutiveGoodFrames = 0;
+        const REQUIRED_CONSECUTIVE_FRAMES = 5;
+
         async function detectionLoop() {
+            if (!video.videoWidth) {
+                requestAnimationFrame(detectionLoop);
+                return;
+            }
+
             const detection = await detectFace();
             
             if (detection) {
                 faceDetected = true;
-                detectionIndicator.className = 'face-detected';
-                detectionIndicator.textContent = '✓ Face Detected';
+                const { score, box } = detection.detection;
+                
+                // Quality checks
+                const isHighConfidence = score > 0.85;
+                const isLargeEnough = box.width > 120; 
+                
+                const centerX = box.x + box.width / 2;
+                const centerY = box.y + box.height / 2;
+                const videoCenterX = video.videoWidth / 2;
+                const videoCenterY = video.videoHeight / 2;
+                
+                const isCentered = Math.abs(centerX - videoCenterX) < video.videoWidth * 0.25 && 
+                                   Math.abs(centerY - videoCenterY) < video.videoHeight * 0.25;
+
                 drawDetection(detection);
 
-                // Auto-trigger if action is set and not already processing
-                if (action && !isProcessing) {
-                     scanAndMark(action);
+                if (isHighConfidence && isLargeEnough && isCentered) {
+                    detectionIndicator.className = 'face-detected';
+                    detectionIndicator.textContent = '✓ Perfect Match';
+                    consecutiveGoodFrames++;
+                    
+                    // Auto-trigger if action is set and not already processing
+                    // Wait for stability (consecutive good frames)
+                    if (action && !isProcessing && consecutiveGoodFrames >= REQUIRED_CONSECUTIVE_FRAMES) {
+                         scanAndMark(action);
+                    }
+
+                } else {
+                    consecutiveGoodFrames = 0;
+                    detectionIndicator.className = 'message processing'; // Use existing class for warning
+                    detectionIndicator.style.position = 'absolute';
+                    detectionIndicator.style.top = '20px';
+                    detectionIndicator.style.right = '20px';
+                    
+                    if (!isLargeEnough) detectionIndicator.textContent = '⚠️ Move Closer';
+                    else if (!isCentered) detectionIndicator.textContent = '⚠️ Center Face';
+                    else detectionIndicator.textContent = '⚠️ Hold Still';
                 }
 
             } else {
                 faceDetected = false;
+                consecutiveGoodFrames = 0;
                 detectionIndicator.className = 'face-not-detected';
                 detectionIndicator.textContent = '⚠️ No Face Detected';
+                // Reset style overrides
+                detectionIndicator.style.position = 'absolute'; 
+                detectionIndicator.style.top = '20px';
+                detectionIndicator.style.right = '20px';
+
                 overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
             }
             

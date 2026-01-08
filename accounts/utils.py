@@ -24,11 +24,14 @@ def compute_face_embedding(image_path, model_name="SFace"):
         
         # Use DeepFace.represent() to extract embeddings
         # This is much faster than DeepFace.verify() during recognition
+        # switched to enforce_detection=True to ensure we don't match background noise
+        # backend=opencv is fast; can switch to 'ssd' or 'mtcnn' if accuracy is poor, 
+        # but frontend now filters for good frames.
         result = DeepFace.represent(
             img_path=image_path,
             model_name=model_name,
             detector_backend="opencv",
-            enforce_detection=False
+            enforce_detection=True
         )
         
         # DeepFace.represent returns a list of dicts (one per detected face)
