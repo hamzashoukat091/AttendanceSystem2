@@ -516,13 +516,34 @@
             const detection = await detectFace();
             
             if (detection) {
+                // Check face size relative to frame
+                const box = detection.detection.box;
+                const faceRatio = box.width / video.videoWidth;
+                
+                let statusText = '✓ Face Detected';
+                let statusClass = 'face-detected';
+                let readyToScan = true;
+                
+                // Check face distance/size (ratio of frame width)
+                if (faceRatio < 0.15) {
+                    // Face too small (too far)
+                    statusText = '🔍 Move Closer';
+                    statusClass = 'face-not-detected'; 
+                    readyToScan = false;
+                } else if (faceRatio > 0.65) {
+                    // Face too large (too close)
+                    statusText = '↔️ Move Back';
+                    statusClass = 'face-not-detected';
+                    readyToScan = false;
+                }
+
                 faceDetected = true;
-                detectionIndicator.className = 'face-detected';
-                detectionIndicator.textContent = '✓ Face Detected';
+                detectionIndicator.className = statusClass;
+                detectionIndicator.textContent = statusText;
                 drawDetection(detection);
 
-                // Auto-trigger if action is set and not already processing
-                if (action && !isProcessing) {
+                // Auto-trigger only if good position
+                if (action && !isProcessing && readyToScan) {
                      scanAndMark(action);
                 }
 
