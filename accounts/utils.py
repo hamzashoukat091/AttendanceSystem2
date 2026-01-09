@@ -28,7 +28,7 @@ def compute_face_embedding(image_path, model_name="SFace"):
             img_path=image_path,
             model_name=model_name,
             detector_backend="opencv",
-            enforce_detection=False
+            enforce_detection=True
         )
         
         # DeepFace.represent returns a list of dicts (one per detected face)
@@ -39,6 +39,10 @@ def compute_face_embedding(image_path, model_name="SFace"):
             logger.warning(f"No face detected in {image_path}")
             return None
             
+    except ValueError:
+        logger.warning(f"No face detected in {image_path}")
+        return None
+
     except Exception as e:
         logger.error(f"Error computing embedding for {image_path}: {str(e)}")
         return None

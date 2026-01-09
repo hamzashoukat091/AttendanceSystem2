@@ -186,7 +186,10 @@ def save_face_image(request):
             )
             logger.info(f"Saved embedding for {img_filename}")
         else:
-            logger.warning(f"Could not compute embedding for {img_filename}, but image saved")
+            logger.warning(f"Could not compute embedding for {img_filename}, removing dirty capture.")
+            if os.path.exists(img_path):
+                os.remove(img_path)
+            return JsonResponse({'success': False, 'error': 'No face detected. Please ensure your face is clearly visible.'})
         
         # Update user face count
         user.face_images_count = img_count + 1
