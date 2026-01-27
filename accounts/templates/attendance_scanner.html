@@ -658,6 +658,14 @@
             }, 1000);
         }
         
+        // Safety timeout to return to home screen if left idle/stuck
+        // This ensures the scanner doesn't restart open indefinitely
+        setTimeout(() => {
+            // Only redirect if we haven't already marked attendance (which redirects anyway)
+            // validation is handled by the browser context change
+            window.location.replace("{% url 'home' %}");
+        }, 60000); // 60 seconds (1 minute)
+
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);

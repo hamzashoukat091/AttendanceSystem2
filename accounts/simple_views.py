@@ -1,7 +1,3 @@
-"""
-Simplified face recognition and attendance system views
-No login required - direct face registration and attendance marking
-"""
 import os
 import cv2
 import base64
