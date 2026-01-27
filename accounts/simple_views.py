@@ -238,28 +238,30 @@ def recognize_and_mark_attendance(request):
         if img is None:
             return JsonResponse({'success': False, 'error': 'Failed to decode image'})
         
-        # Save temporary image
-        temp_image = os.path.join(settings.MEDIA_ROOT, "temp_scan.jpg")
-        cv2.imwrite(temp_image, img)
-        
-        query_embedding = compute_face_embedding(temp_image, model_name="SFace")
+        # Skip saving temp file - pass numpy array directly for speed
+        query_embedding = compute_face_embedding(img, model_name="SFace")
         
         if query_embedding is None:
-            # Clean up temp file
-            if os.path.exists(temp_image):
-                os.remove(temp_image)
             return JsonResponse({
                 'success': False,
                 'error': 'Could not detect face in the image. Please try again with better lighting.'
             })
         
         user_embeddings = {}
-        users_with_faces = CustomUser.objects.filter(has_face_data=True, api_user_id__isnull=False)
         
-        for user in users_with_faces:
-            embeddings = UserFaceEmbedding.objects.filter(user=user).values_list('embedding', flat=True)
-            if embeddings:
-                user_embeddings[user.id] = list(embeddings)
+        # Optimized: Fetch all embeddings in one query to avoid N+1 problem
+        all_embeddings = UserFaceEmbedding.objects.filter(
+            user__has_face_data=True, 
+            user__api_user_id__isnull=False
+        ).values('user_id', 'embedding')
+        
+        # Group embeddings by user
+        from collections import defaultdict
+        grouped_embeddings = defaultdict(list)
+        for item in all_embeddings:
+            grouped_embeddings[item['user_id']].append(item['embedding'])
+            
+        user_embeddings = dict(grouped_embeddings)
         
         DISTANCE_THRESHOLD = 0.33
         
@@ -271,10 +273,6 @@ def recognize_and_mark_attendance(request):
             user_embeddings, 
             threshold=DISTANCE_THRESHOLD
         )
-        
-        # Clean up temp file
-        if os.path.exists(temp_image):
-            os.remove(temp_image)
         
         if user_id is None:
             logger.warning("RECOGNITION FAILED - No matching face found above threshold")

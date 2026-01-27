@@ -13,7 +13,7 @@ def compute_face_embedding(image_path, model_name="SFace"):
     Compute face embedding for a given image using DeepFace.
     
     Args:
-        image_path: Absolute path to the face image
+        image_path: Absolute path to the face image OR numpy array
         model_name: DeepFace model to use (default: SFace)
     
     Returns:
