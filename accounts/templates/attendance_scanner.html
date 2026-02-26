@@ -483,7 +483,7 @@
             
             try {
                 const detection = await faceapi
-                    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320 }))
+                    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                     .withFaceLandmarks();
                 
                 return detection;
@@ -575,8 +575,8 @@
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
             
-            // Get image data - Use lower quality for faster transmission (0.7)
-            const imageData = canvas.toDataURL('image/jpeg', 0.7);
+            // Get image data
+            const imageData = canvas.toDataURL('image/jpeg', 0.9);
             
             try {
                 const response = await fetch('{% url "recognize_and_mark" %}', {
@@ -645,15 +645,17 @@
             // Check if face-api is loaded
             if (typeof faceapi === 'undefined') {
                 showMessage('Loading face detection library...', 'info');
-                setTimeout(init, 100);  // Check faster (100ms instead of 1000ms)
+                setTimeout(init, 1000);
                 return;
             }
             
             await loadModels();
             await startCamera();
             
-            // Start detection loop immediately after camera is ready
-            detectionLoop();
+            // Start detection loop after camera is ready
+            setTimeout(() => {
+                detectionLoop();
+            }, 1000);
         }
         
         // Safety timeout to return to home screen if left idle/stuck
