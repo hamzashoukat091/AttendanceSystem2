@@ -552,12 +552,12 @@
         <div id="messageContainer" class="message-container"></div>
 
         <div class="cards">
-            <button onclick="openScanner('check_in')" class="card check-in">
+            <button onclick="this.blur(); openScanner('check_in')" class="card check-in">
                 <div class="card-icon">🏢</div>
                 <h2>Check In</h2>
             </button>
 
-            <button onclick="openScanner('check_out')" class="card check-out">
+            <button onclick="this.blur(); openScanner('check_out')" class="card check-out">
                 <div class="card-icon">🏠</div>
                 <h2>Check Out</h2>
             </button>
