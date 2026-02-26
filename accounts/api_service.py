@@ -77,10 +77,18 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
             headers={'Content-Type': 'application/json'},
             timeout=10
         )
-        response.raise_for_status()
-        
         data = response.json()
-        
+
+        # Success: HTTP 2xx with a message field (current API format)
+        if response.ok and 'message' in data:
+            message = data['message']
+            logger.info(f"Attendance posted successfully for user {user_id}: {message}")
+            return {
+                'success': True,
+                'message': message
+            }
+
+        # Legacy format: {"success": true, "statusCode": 200, "data": {"message": "..."}}
         if data.get('success') and data.get('statusCode') == 200:
             message = data.get('data', {}).get('message', 'Success')
             logger.info(f"Attendance posted successfully for user {user_id}: {message}")
@@ -88,12 +96,12 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
                 'success': True,
                 'message': message
             }
-        else:
-            logger.error(f"API returned unsuccessful response: {data}")
-            return {
-                'success': False,
-                'message': 'Failed to post attendance'
-            }
+
+        logger.error(f"API returned unsuccessful response: {data}")
+        return {
+            'success': False,
+            'message': data.get('message', 'Failed to post attendance')
+        }
             
     except requests.RequestException as e:
         logger.error(f"Error posting attendance to API: {str(e)}")
