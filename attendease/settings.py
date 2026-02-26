@@ -246,6 +246,11 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'accounts.api_service': {
+            'handlers': ['console', 'face_recognition_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
