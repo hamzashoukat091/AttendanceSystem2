@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # API Configuration
-API_BASE_URL = "https://perfectofficeapp.proxipreview.com/api"
+API_BASE_URL = "https://office.digitalperfection.app/api"
 API_USERS_ENDPOINT = f"{API_BASE_URL}/users"
 API_ATTENDANCE_ENDPOINT = f"{API_BASE_URL}/attendance/store"
 
@@ -25,14 +25,26 @@ def fetch_users_from_api() -> Optional[List[Dict]]:
         response.raise_for_status()
         
         data = response.json()
-        
+
+        # New API format: {"message": "...", "users": [...]}
+        if 'users' in data and isinstance(data['users'], list):
+            users = data['users']
+            logger.info(f"Successfully fetched {len(users)} users from API")
+            return users
+
+        # Legacy format: {"success": true, "statusCode": 200, "data": {"users": [...]}}
         if data.get('success') and data.get('statusCode') == 200:
             users = data.get('data', {}).get('users', [])
             logger.info(f"Successfully fetched {len(users)} users from API")
             return users
-        else:
-            logger.error(f"API returned unsuccessful response: {data}")
-            return None
+
+        # Raw list
+        if isinstance(data, list):
+            logger.info(f"Successfully fetched {len(data)} users from API")
+            return data
+
+        logger.error(f"API returned unrecognised response format: {data}")
+        return None
             
     except requests.RequestException as e:
         logger.error(f"Error fetching users from API: {str(e)}")
