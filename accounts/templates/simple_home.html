@@ -148,28 +148,6 @@
             color: #991B1B;
         }
 
-        /* Hover only on real pointer devices — prevents stuck hover on touch screens */
-        @media (hover: hover) and (pointer: fine) {
-            .card.check-in:hover {
-                background: var(--success);
-                border-color: var(--success);
-                color: white;
-                transform: translateY(-4px);
-                box-shadow: 0 12px 20px -8px rgba(16, 185, 129, 0.4);
-            }
-
-            .card.check-out:hover {
-                background: var(--danger);
-                border-color: var(--danger);
-                color: white;
-                transform: translateY(-4px);
-                box-shadow: 0 12px 20px -8px rgba(239, 68, 68, 0.4);
-            }
-
-            .card:hover .card-icon {
-                transform: scale(1.1) rotate(5deg);
-            }
-        }
 
         .register-link {
             position: fixed;
