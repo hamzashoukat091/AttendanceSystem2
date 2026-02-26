@@ -228,7 +228,7 @@ LOGGING = {
         },
         'face_recognition_file': {
             'level': 'INFO',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'accounts.logging_handlers.WindowsSafeTimedRotatingFileHandler',
             'filename': BASE_DIR / 'logs' / 'face_recognition.log',
             'when': 'midnight',
             'backupCount': 30,
