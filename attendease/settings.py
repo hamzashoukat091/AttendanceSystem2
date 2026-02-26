@@ -228,10 +228,11 @@ LOGGING = {
         },
         'face_recognition_file': {
             'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': BASE_DIR / 'logs' / 'face_recognition.log',
-            'maxBytes': 10485760,  # 10MB
-            'backupCount': 5,
+            'when': 'midnight',
+            'backupCount': 30,
+            'encoding': 'utf-8',
             'formatter': 'detailed',
         },
     },

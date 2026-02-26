@@ -141,14 +141,6 @@
             color: #065F46;
         }
 
-        .card.check-in:hover {
-            background: var(--success);
-            border-color: var(--success);
-            color: white;
-            transform: translateY(-4px);
-            box-shadow: 0 12px 20px -8px rgba(16, 185, 129, 0.4);
-        }
-
         /* Check Out Styling */
         .card.check-out {
             background: #FEF2F2;
@@ -156,16 +148,27 @@
             color: #991B1B;
         }
 
-        .card.check-out:hover {
-            background: var(--danger);
-            border-color: var(--danger);
-            color: white;
-            transform: translateY(-4px);
-            box-shadow: 0 12px 20px -8px rgba(239, 68, 68, 0.4);
-        }
+        /* Hover only on real pointer devices — prevents stuck hover on touch screens */
+        @media (hover: hover) {
+            .card.check-in:hover {
+                background: var(--success);
+                border-color: var(--success);
+                color: white;
+                transform: translateY(-4px);
+                box-shadow: 0 12px 20px -8px rgba(16, 185, 129, 0.4);
+            }
 
-        .card:hover .card-icon {
-            transform: scale(1.1) rotate(5deg);
+            .card.check-out:hover {
+                background: var(--danger);
+                border-color: var(--danger);
+                color: white;
+                transform: translateY(-4px);
+                box-shadow: 0 12px 20px -8px rgba(239, 68, 68, 0.4);
+            }
+
+            .card:hover .card-icon {
+                transform: scale(1.1) rotate(5deg);
+            }
         }
 
         .register-link {
@@ -552,12 +555,12 @@
         <div id="messageContainer" class="message-container"></div>
 
         <div class="cards">
-            <button onclick="this.blur(); openScanner('check_in')" class="card check-in">
+            <button onclick="openScanner('check_in')" class="card check-in">
                 <div class="card-icon">🏢</div>
                 <h2>Check In</h2>
             </button>
 
-            <button onclick="this.blur(); openScanner('check_out')" class="card check-out">
+            <button onclick="openScanner('check_out')" class="card check-out">
                 <div class="card-icon">🏠</div>
                 <h2>Check Out</h2>
             </button>
