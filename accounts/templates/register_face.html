@@ -143,6 +143,19 @@
             width: 100%;
             height: 100%;
             transform: scaleX(-1);
+            z-index: 2;
+        }
+
+        #blurCanvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+            z-index: 1;
+            pointer-events: none;
         }
         
         .status-display {
@@ -593,6 +606,7 @@
         <div class="camera-container">
             <div class="video-wrapper">
                 <video id="video" autoplay playsinline></video>
+                <canvas id="blurCanvas"></canvas>
                 <canvas id="overlay"></canvas>
                 <canvas id="canvas"></canvas>
                 <div id="detectionIndicator" class="face-not-detected">⚠️ No Face Detected</div>
@@ -682,8 +696,12 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const overlay = document.getElementById('overlay');
+        const blurCanvas = document.getElementById('blurCanvas');
         const ctx = canvas.getContext('2d');
         const overlayCtx = overlay.getContext('2d');
+        const blurCtx = blurCanvas.getContext('2d');
+        const centerCanvas = document.createElement('canvas');
+        const centerCtx = centerCanvas.getContext('2d');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const doneBtn = document.getElementById('doneBtn');
@@ -692,7 +710,7 @@
         const progressText = document.getElementById('progressText');
         const detectionIndicator = document.getElementById('detectionIndicator');
         const positionGuide = document.getElementById('positionGuide');
-        
+
         let currentCount = 0;
         const requiredCount = {{ required_count }};
         const userId = {{ user.api_user_id }};
@@ -700,6 +718,64 @@
         let isCapturing = false;
         let faceDetected = false;
         let modelsLoaded = false;
+        let blurRAF = null;
+
+        function renderBlurEffect() {
+            if (!video.videoWidth || !video.videoHeight) {
+                blurRAF = requestAnimationFrame(renderBlurEffect);
+                return;
+            }
+
+            if (blurCanvas.width !== video.videoWidth) blurCanvas.width = video.videoWidth;
+            if (blurCanvas.height !== video.videoHeight) blurCanvas.height = video.videoHeight;
+
+            const w = blurCanvas.width;
+            const h = blurCanvas.height;
+            const band = Math.round(w * 0.25);
+            const feather = 20;
+
+            blurCtx.clearRect(0, 0, w, h);
+
+            // Left band
+            blurCtx.save();
+            blurCtx.beginPath();
+            blurCtx.rect(0, 0, band + feather, h);
+            blurCtx.clip();
+            blurCtx.filter = 'blur(14px)';
+            blurCtx.drawImage(video, 0, 0, w, h);
+            blurCtx.filter = 'none';
+            blurCtx.fillStyle = 'rgba(0,0,0,0.30)';
+            blurCtx.fillRect(0, 0, band, h);
+            const leftFade = blurCtx.createLinearGradient(band - feather, 0, band + feather, 0);
+            leftFade.addColorStop(0, 'rgba(0,0,0,0)');
+            leftFade.addColorStop(1, 'rgba(0,0,0,1)');
+            blurCtx.globalCompositeOperation = 'destination-out';
+            blurCtx.fillStyle = leftFade;
+            blurCtx.fillRect(band - feather, 0, feather * 2, h);
+            blurCtx.globalCompositeOperation = 'source-over';
+            blurCtx.restore();
+
+            // Right band
+            blurCtx.save();
+            blurCtx.beginPath();
+            blurCtx.rect(w - band - feather, 0, band + feather, h);
+            blurCtx.clip();
+            blurCtx.filter = 'blur(14px)';
+            blurCtx.drawImage(video, 0, 0, w, h);
+            blurCtx.filter = 'none';
+            blurCtx.fillStyle = 'rgba(0,0,0,0.30)';
+            blurCtx.fillRect(w - band, 0, band, h);
+            const rightFade = blurCtx.createLinearGradient(w - band - feather, 0, w - band + feather, 0);
+            rightFade.addColorStop(0, 'rgba(0,0,0,1)');
+            rightFade.addColorStop(1, 'rgba(0,0,0,0)');
+            blurCtx.globalCompositeOperation = 'destination-out';
+            blurCtx.fillStyle = rightFade;
+            blurCtx.fillRect(w - band - feather, 0, feather * 2, h);
+            blurCtx.globalCompositeOperation = 'source-over';
+            blurCtx.restore();
+
+            blurRAF = requestAnimationFrame(renderBlurEffect);
+        }
         const capturedFrames = [];  // local buffer — no backend calls during capture
         let existingFaceHandled = false;  // tracks whether delete-existing was already done this session
         let lastFaceDetectedTime = 0;     // timestamp of last successful face detection (set when models load)
@@ -747,6 +823,9 @@
                     canvas.height = video.videoHeight;
                     overlay.width = video.videoWidth;
                     overlay.height = video.videoHeight;
+                    blurCanvas.width = video.videoWidth;
+                    blurCanvas.height = video.videoHeight;
+                    blurRAF = requestAnimationFrame(renderBlurEffect);
                 });
                 
                 showMessage('Camera started successfully', 'success');
@@ -755,16 +834,22 @@
             }
         }
         
-        // Detect face in video
+        // Detect face in video — only within the center 50% zone
         async function detectFace() {
             if (!modelsLoaded || !video.videoWidth) return null;
-            
+
+            const srcX = Math.round(video.videoWidth * 0.25);
+            const srcW = Math.round(video.videoWidth * 0.50);
+            centerCanvas.width = srcW;
+            centerCanvas.height = video.videoHeight;
+            centerCtx.drawImage(video, srcX, 0, srcW, video.videoHeight, 0, 0, srcW, video.videoHeight);
+
             try {
                 const detection = await faceapi.detectSingleFace(
-                    video, 
+                    centerCanvas,
                     new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
                 ).withFaceLandmarks();
-                
+
                 return detection;
             } catch (err) {
                 console.error('Detection error:', err);
@@ -772,22 +857,23 @@
             }
         }
         
-        // Draw detection box
+        // Draw detection box — offset x by 25% to map center-canvas coords back to full overlay
         function drawDetection(detection) {
             overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
-            
+
             if (detection) {
+                const offsetX = Math.round(overlay.width * 0.25);
                 const box = detection.detection.box;
                 overlayCtx.strokeStyle = '#43e97b';
                 overlayCtx.lineWidth = 3;
-                overlayCtx.strokeRect(box.x, box.y, box.width, box.height);
-                
+                overlayCtx.strokeRect(box.x + offsetX, box.y, box.width, box.height);
+
                 // Draw landmarks
                 const landmarks = detection.landmarks.positions;
                 overlayCtx.fillStyle = '#43e97b';
                 landmarks.forEach(point => {
                     overlayCtx.beginPath();
-                    overlayCtx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+                    overlayCtx.arc(point.x + offsetX, point.y, 2, 0, 2 * Math.PI);
                     overlayCtx.fill();
                 });
             }
@@ -1103,6 +1189,10 @@
         } else {
             init();
         }
+
+        window.addEventListener('beforeunload', () => {
+            if (blurRAF) cancelAnimationFrame(blurRAF);
+        });
     </script>
 </body>
 </html>

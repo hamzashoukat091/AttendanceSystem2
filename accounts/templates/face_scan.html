@@ -299,11 +299,69 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function drawVideoFrame() {
-    ctx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
-    const boxSize = Math.min(videoCanvas.width, videoCanvas.height) / 3;
+    const w = videoCanvas.width;
+    const h = videoCanvas.height;
+
+    ctx.drawImage(video, 0, 0, w, h);
+
+    const band = Math.round(w * 0.25);
+    const feather = 20;
+
+    // Left band: blur + dim + feathered right edge
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, band + feather, h);
+    ctx.clip();
+    ctx.filter = 'blur(14px)';
+    ctx.drawImage(video, 0, 0, w, h);
+    ctx.filter = 'none';
+    ctx.fillStyle = 'rgba(0,0,0,0.30)';
+    ctx.fillRect(0, 0, band, h);
+    const leftFade = ctx.createLinearGradient(band - feather, 0, band + feather, 0);
+    leftFade.addColorStop(0, 'rgba(0,0,0,0)');
+    leftFade.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = leftFade;
+    ctx.fillRect(band - feather, 0, feather * 2, h);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.restore();
+
+    // Right band: blur + dim + feathered left edge
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(w - band - feather, 0, band + feather, h);
+    ctx.clip();
+    ctx.filter = 'blur(14px)';
+    ctx.drawImage(video, 0, 0, w, h);
+    ctx.filter = 'none';
+    ctx.fillStyle = 'rgba(0,0,0,0.30)';
+    ctx.fillRect(w - band, 0, band, h);
+    const rightFade = ctx.createLinearGradient(w - band - feather, 0, w - band + feather, 0);
+    rightFade.addColorStop(0, 'rgba(0,0,0,1)');
+    rightFade.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = rightFade;
+    ctx.fillRect(w - band - feather, 0, feather * 2, h);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.restore();
+
+    // Center oval guide
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(w / 2, h / 2, Math.round(w * 0.35), Math.round(h * 0.60), 0, 0, 2 * Math.PI);
+    ctx.setLineDash([8, 6]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    // Purple face box (on top of blur)
+    const boxSize = Math.min(w, h) / 3;
+    ctx.setLineDash([]);
     ctx.strokeStyle = '#6C5CE7';
     ctx.lineWidth = 2;
-    ctx.strokeRect(videoCanvas.width/2 - boxSize/2, videoCanvas.height/2 - boxSize/2, boxSize, boxSize);
+    ctx.strokeRect(w/2 - boxSize/2, h/2 - boxSize/2, boxSize, boxSize);
+
     requestAnimationFrame(drawVideoFrame);
   }
 

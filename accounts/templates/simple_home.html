@@ -715,7 +715,7 @@
 
         let scannerTimerInterval = null;
 
-        function openScanner(actionType) {
+        async function openScanner(actionType) {
             scannerAction = actionType;
             scannerProcessing = false;
             scannerLoopActive = true;
@@ -726,22 +726,32 @@
             document.getElementById('scannerFaceIndicator').textContent = '⚠️ No Face Detected';
             document.getElementById('scannerFaceIndicator').className = 'face-not-detected';
 
-            const video = document.getElementById('scannerVideo');
-            if (cameraStream) {
-                video.srcObject = cameraStream;
-                video.addEventListener('loadedmetadata', () => {
-                    const canvas = document.getElementById('scannerDrawCanvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                }, { once: true });
-            }
-
             document.getElementById('scannerOverlay').classList.add('active');
-
             updateScannerTime();
             scannerTimerInterval = setInterval(updateScannerTime, 1000);
 
-            requestAnimationFrame(scannerDetectionLoop);
+            // If camera wasn't pre-started yet (user clicked before getUserMedia resolved), start it now
+            if (!cameraStream) {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                } catch (err) {
+                    showScannerMessage('❌ Cannot access camera: ' + err.message, 'error');
+                    return;
+                }
+            }
+
+            const video = document.getElementById('scannerVideo');
+            video.srcObject = cameraStream;
+            video.play().catch(() => {});
+
+            // Start detection loop only after video dimensions are known
+            if (video.videoWidth) {
+                requestAnimationFrame(scannerDetectionLoop);
+            } else {
+                video.addEventListener('loadedmetadata', () => {
+                    if (scannerLoopActive) requestAnimationFrame(scannerDetectionLoop);
+                }, { once: true });
+            }
         }
 
         function closeScanner() {
