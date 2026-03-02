@@ -728,48 +728,38 @@
 
             const w = bc.width;
             const h = bc.height;
-            const band = Math.round(w * 0.25);
-            const feather = 20;
+            const cx = w / 2;
+            const cy = h / 2;
+            const radius = Math.round(Math.min(w, h) * 0.42);
             const bCtx = bc.getContext('2d');
 
             bCtx.clearRect(0, 0, w, h);
 
-            // Left band: blur + dim + feathered right edge
+            // Step 1: Draw blurred + dimmed over entire frame
             bCtx.save();
-            bCtx.beginPath();
-            bCtx.rect(0, 0, band + feather, h);
-            bCtx.clip();
-            bCtx.filter = 'blur(14px)';
+            bCtx.filter = 'blur(18px)';
             bCtx.drawImage(video, 0, 0, w, h);
             bCtx.filter = 'none';
-            bCtx.fillStyle = 'rgba(0,0,0,0.30)';
-            bCtx.fillRect(0, 0, band, h);
-            const leftFade = bCtx.createLinearGradient(band - feather, 0, band + feather, 0);
-            leftFade.addColorStop(0, 'rgba(0,0,0,0)');
-            leftFade.addColorStop(1, 'rgba(0,0,0,1)');
-            bCtx.globalCompositeOperation = 'destination-out';
-            bCtx.fillStyle = leftFade;
-            bCtx.fillRect(band - feather, 0, feather * 2, h);
-            bCtx.globalCompositeOperation = 'source-over';
+            bCtx.fillStyle = 'rgba(0,0,0,0.55)';
+            bCtx.fillRect(0, 0, w, h);
             bCtx.restore();
 
-            // Right band: blur + dim + feathered left edge
+            // Step 2: Erase a clean hard-edged circle (fully transparent inside)
+            bCtx.save();
+            bCtx.globalCompositeOperation = 'destination-out';
+            bCtx.fillStyle = 'rgba(0,0,0,1)';
+            bCtx.beginPath();
+            bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+            bCtx.fill();
+            bCtx.restore();
+
+            // Step 3: Draw a subtle guide ring at the circle boundary
             bCtx.save();
             bCtx.beginPath();
-            bCtx.rect(w - band - feather, 0, band + feather, h);
-            bCtx.clip();
-            bCtx.filter = 'blur(14px)';
-            bCtx.drawImage(video, 0, 0, w, h);
-            bCtx.filter = 'none';
-            bCtx.fillStyle = 'rgba(0,0,0,0.30)';
-            bCtx.fillRect(w - band, 0, band, h);
-            const rightFade = bCtx.createLinearGradient(w - band - feather, 0, w - band + feather, 0);
-            rightFade.addColorStop(0, 'rgba(0,0,0,1)');
-            rightFade.addColorStop(1, 'rgba(0,0,0,0)');
-            bCtx.globalCompositeOperation = 'destination-out';
-            bCtx.fillStyle = rightFade;
-            bCtx.fillRect(w - band - feather, 0, feather * 2, h);
-            bCtx.globalCompositeOperation = 'source-over';
+            bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+            bCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            bCtx.lineWidth = 2;
+            bCtx.stroke();
             bCtx.restore();
 
             scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
