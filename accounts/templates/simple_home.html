@@ -780,12 +780,17 @@
 
         let scannerTimerInterval = null;
         let faceDetectedSince = null;
+        const bestFrame = document.createElement('canvas');
+        let bestFrameScore = 0;
+        let retryCount = 0;
 
         async function openScanner(actionType) {
             scannerAction = actionType;
             scannerProcessing = false;
             scannerLoopActive = true;
             faceDetectedSince = null;
+            bestFrameScore = 0;
+            retryCount = 0;
 
             const modeText = actionType === 'check_in' ? 'Check In' : 'Check Out';
             document.getElementById('scannerModeDisplay').textContent = `Scanning for ${modeText}...`;
@@ -828,6 +833,8 @@
         function closeScanner() {
             scannerLoopActive = false;
             faceDetectedSince = null;
+            bestFrameScore = 0;
+            retryCount = 0;
             if (scannerBlurRAF) { cancelAnimationFrame(scannerBlurRAF); scannerBlurRAF = null; }
             clearInterval(scannerTimerInterval);
             const video = document.getElementById('scannerVideo');
@@ -874,22 +881,34 @@
                         }
 
                         if (readyToScan && !scannerProcessing) {
-                            if (!faceDetectedSince) faceDetectedSince = Date.now();
+                            const score = detection.detection.score;
+                            if (!faceDetectedSince) {
+                                faceDetectedSince = Date.now();
+                                bestFrameScore = 0;
+                            }
+                            // Keep the sharpest frame (highest detection confidence) during countdown
+                            if (score > bestFrameScore) {
+                                bestFrameScore = score;
+                                bestFrame.width = video.videoWidth;
+                                bestFrame.height = video.videoHeight;
+                                bestFrame.getContext('2d').drawImage(video, 0, 0);
+                            }
                             const elapsed = Date.now() - faceDetectedSince;
-                            const remaining = Math.ceil((1000 - elapsed) / 1000);
                             if (elapsed >= 1000) {
                                 scannerMarkAttendance();
                             } else {
-                                indicator.textContent = `✓ Hold Still... ${remaining}s`;
+                                indicator.textContent = `✓ Hold Still... ${Math.ceil((1000 - elapsed) / 1000)}s`;
                                 indicator.className = 'face-detected';
                             }
                         } else if (!readyToScan) {
                             faceDetectedSince = null;
+                            bestFrameScore = 0;
                         }
                     } else {
                         indicator.textContent = '⚠️ No Face Detected';
                         indicator.className = 'face-not-detected';
                         faceDetectedSince = null;
+                        bestFrameScore = 0;
                     }
                 } catch (e) {
                     console.error('Detection error:', e);
@@ -906,9 +925,12 @@
 
             const video = document.getElementById('scannerVideo');
             const captureCanvas = document.getElementById('scannerCaptureCanvas');
-            captureCanvas.width = video.videoWidth;
-            captureCanvas.height = video.videoHeight;
-            captureCanvas.getContext('2d').drawImage(video, 0, 0);
+            // Use the sharpest frame captured during countdown; fall back to current frame
+            const src = (bestFrame.width > 0) ? bestFrame : video;
+            captureCanvas.width = src.width || video.videoWidth;
+            captureCanvas.height = src.height || video.videoHeight;
+            captureCanvas.getContext('2d').drawImage(src, 0, 0);
+            bestFrameScore = 0;
             const imageData = captureCanvas.toDataURL('image/jpeg', 0.9);
 
             try {
@@ -920,6 +942,7 @@
                 const result = await response.json();
 
                 if (result.success) {
+                    retryCount = 0;
                     showScannerMessage('✓ Attendance Marked!', 'success');
                     setTimeout(() => {
                         closeScanner();
@@ -932,10 +955,19 @@
                         showNotification();
                     }, 500);
                 } else {
-                    showScannerMessage('❌ ' + result.error, 'error');
-                    setTimeout(() => { scannerProcessing = false; }, 2000);
+                    retryCount++;
+                    if (retryCount <= 1) {
+                        // Silent retry — reset quickly so the loop captures a fresh frame
+                        showScannerMessage('🔄 Retrying...', 'processing');
+                        setTimeout(() => { scannerProcessing = false; }, 400);
+                    } else {
+                        retryCount = 0;
+                        showScannerMessage('❌ ' + result.error, 'error');
+                        setTimeout(() => { scannerProcessing = false; }, 2000);
+                    }
                 }
             } catch (err) {
+                retryCount = 0;
                 showScannerMessage('Network error: ' + err.message, 'error');
                 setTimeout(() => { scannerProcessing = false; }, 2000);
             }

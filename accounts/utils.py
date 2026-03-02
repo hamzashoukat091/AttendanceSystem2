@@ -19,25 +19,23 @@ def compute_face_embedding(image_path, model_name="SFace"):
     """
     try:
         from deepface import DeepFace
-        
-        # Use DeepFace.represent() to extract embeddings
-        # This is much faster than DeepFace.verify() during recognition
-        result = DeepFace.represent(
-            img_path=image_path,
-            model_name=model_name,
-            detector_backend="mtcnn",
-            enforce_detection=True
-        )
-        
-        # DeepFace.represent returns a list of dicts (one per detected face)
-        if result and len(result) > 0:
-            embedding = result[0]["embedding"]
-            return embedding
-        else:
-            logger.warning(f"No face detected in {image_path}")
-            return None
-            
-    except ValueError:
+
+        # Try MTCNN first (best alignment quality).
+        # Fall back to opencv if MTCNN misses the face — opencv is more lenient
+        # and catches faces that MTCNN rejects at slight angles or in dim lighting.
+        for backend in ("mtcnn", "opencv"):
+            try:
+                result = DeepFace.represent(
+                    img_path=image_path,
+                    model_name=model_name,
+                    detector_backend=backend,
+                    enforce_detection=True
+                )
+                if result and len(result) > 0:
+                    return result[0]["embedding"]
+            except ValueError:
+                continue  # No face found with this backend — try next
+
         logger.warning(f"No face detected in {image_path}")
         return None
 
