@@ -101,7 +101,7 @@ class Command(BaseCommand):
                     skipped_count += 1
 
         # Remove users that exist in DB (with an api_user_id) but are no longer in the API
-        db_api_users = User.objects.filter(api_user_id__isnull=False).exclude(api_user_id='')
+        db_api_users = User.objects.filter(api_user_id__isnull=False)
         users_to_remove = db_api_users.exclude(api_user_id__in=api_ids)
 
         if dry_run:
