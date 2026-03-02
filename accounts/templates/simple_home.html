@@ -876,8 +876,8 @@
                         if (readyToScan && !scannerProcessing) {
                             if (!faceDetectedSince) faceDetectedSince = Date.now();
                             const elapsed = Date.now() - faceDetectedSince;
-                            const remaining = Math.ceil((2000 - elapsed) / 1000);
-                            if (elapsed >= 2000) {
+                            const remaining = Math.ceil((1000 - elapsed) / 1000);
+                            if (elapsed >= 1000) {
                                 scannerMarkAttendance();
                             } else {
                                 indicator.textContent = `✓ Hold Still... ${remaining}s`;
