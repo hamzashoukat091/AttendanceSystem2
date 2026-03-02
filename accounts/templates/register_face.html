@@ -663,11 +663,7 @@
             </div>
 
             {% if has_existing_face %}
-            <div class="instructions" style="border-left-color: var(--danger); background: #FEF2F2;">
-                <h3 style="color: var(--danger);">⚠️ Existing Data</h3>
-                <p style="color: var(--danger-dark); font-weight: 500; margin-bottom: 8px;">This user already has {{ current_count }} face images registered.</p>
-                <p style="color: var(--text-sub); font-size: 0.9rem;">Click "Recapture Face" to register face again. The count will start from 0.</p>
-            </div>
+            <p style="color: var(--text-sub); font-size: 0.875rem; text-align: center;">This user already has {{ current_count }} face images registered.</p>
             {% endif %}
             
             <div class="instructions">
