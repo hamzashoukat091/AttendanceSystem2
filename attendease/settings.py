@@ -37,8 +37,7 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',
-    'django.contrib.admin', 
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -148,59 +147,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-# JAZZMIN_UI_TWEAKS = {
-#     "theme": "flatly",
-#     "dark_mode_theme": "darkly",
-#     "navbar": "navbar-dark bg-gradient-primary",
-#     "sidebar": "sidebar-dark-primary",
-#     "accent": "accent-purple",
-#     "button_classes": {"primary": "btn-primary bg-gradient-purple"},
-# }
-
-JAZZMIN_SETTINGS = {
-    "site_title": "Perfect Attendance Admin",
-    "site_header": "Perfect Attendance Dashboard",
-    "site_brand": "Perfect Attendance",
-    "welcome_sign": "Welcome to Perfect Attendance Admin Portal",
-    "site_logo": "logo.jpg",  # path in static/images/
-    "copyright": "© 2025 Perfect Attendance",
-    "show_ui_builder": False,
-    "site_url": "/",
-
-    "topmenu_links": [
-        {"name": "Home", "url": "/admin", "new_window": False},
-        {"name": "Users", "url": "/admin/accounts/customuser/", "new_window": False},
-        {"name": "Attendease", "url": "/admin/accounts/attendance/", "new_window": False},
-        {"name": "Face Manage", "url": "/admin/accounts/facechangerequest/", "new_window": False},
-        {"name": "Leave Request", "url": "/admin/accounts/leaverequest/", "new_window": False},
-        {"name": "User Faces", "url": "/admin/accounts/userface", "new_window": False},
-        {"name": "Perfect Attendance Index Page", "url": "/", "new_window": True},
-    ],
-    
-    "icons": {
-        "accounts.Attendance": "fas fa-calendar-check",
-        "accounts.FaceChangeRequest": "fas fa-user-edit",
-        "accounts.LeaveRequest": "fas fa-plane-departure",
-        "accounts.MasterUserRecords": "fas fa-database",
-        "accounts.UserFace": "fas fa-id-card",
-        "accounts.CustomUser": "fas fa-users",
-        "auth.Group": "fas fa-users-cog",
-    },
-
-    "navigation_expanded": True,
-    "custom_css": "custom_admin.css",
-    "custom_js": "custom_admin.js",
-}
-
-JAZZMIN_UI_TWEAKS = {
-    "theme": "flatly",
-    # "dark_mode_theme": "darkly",
-    "navbar": "navbar-dark bg-gradient-primary",
-    "sidebar": "sidebar-dark-primary",
-    "accent": "accent-purple",
-    "navbar_fixed": True,
-    "sidebar_fixed": True,
-}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

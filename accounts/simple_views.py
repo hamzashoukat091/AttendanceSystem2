@@ -2,15 +2,14 @@ import os
 import cv2
 import base64
 import numpy as np
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from deepface import DeepFace
 from datetime import datetime, timedelta
 import logging
 
-from .models import CustomUser, Attendance, UserFaceEmbedding
+from .models import CustomUser, UserFaceEmbedding, Attendance
 from .api_service import check_in_user, check_out_user
 from .utils import compute_face_embedding, find_best_match
 
@@ -287,76 +286,77 @@ def recognize_and_mark_attendance(request):
         recognized_user = CustomUser.objects.get(id=user_id)
         now = datetime.now()
         current_time = now.time()
-        
-        if now.hour < 8:
-            attendance_date = (now - timedelta(days=1)).date()
-        else:
-            attendance_date = now.date()
-                    
-        # Get or create attendance record for the calculated date
-        attendance, created = Attendance.objects.get_or_create(
-            user=recognized_user,
-            date=attendance_date
-        )
-        
-        # Prevent duplicate check-ins and check-outs
-        if action == 'check_in':
-            if attendance.check_in is not None:
-                return JsonResponse({
-                    'success': True,
-                    'already_done': True,
-                    'message': f'{recognized_user.get_display_name()} has already checked in today at {attendance.check_in.strftime("%H:%M:%S")}.',
-                    'user': {
-                        'username': recognized_user.username,
-                        'display_name': recognized_user.get_display_name(),
-                        'email': recognized_user.email,
-                    },
-                    'action': action,
-                    'time': attendance.check_in.strftime('%H:%M:%S')
-                })
-        else:  # check_out
-            if attendance.check_out is not None:
-                return JsonResponse({
-                    'success': True,
-                    'already_done': True,
-                    'message': f'{recognized_user.get_display_name()} has already checked out today at {attendance.check_out.strftime("%H:%M:%S")}.',
-                    'user': {
-                        'username': recognized_user.username,
-                        'display_name': recognized_user.get_display_name(),
-                        'email': recognized_user.email,
-                    },
-                    'action': action,
-                    'time': attendance.check_out.strftime('%H:%M:%S')
-                })
-            if attendance.check_in is None:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'{recognized_user.get_display_name()} has not checked in yet today. Please check in first before checking out.'
-                })
-        
+
+        # Day boundary: 8 AM to 8 AM next day
+        attendance_date = now.date() if now.hour >= 8 else (now - timedelta(days=1)).date()
+        attendance, _ = Attendance.objects.get_or_create(user=recognized_user, date=attendance_date)
+
+        # Duplicate check — before hitting external API
+        if action == 'check_in' and attendance.check_in is not None:
+            return JsonResponse({
+                'success': True,
+                'already_done': True,
+                'message': f'{recognized_user.get_display_name()} already checked in at {attendance.check_in.strftime("%H:%M:%S")}.',
+                'user': {
+                    'username': recognized_user.username,
+                    'display_name': recognized_user.get_display_name(),
+                    'email': recognized_user.email,
+                    'api_id': recognized_user.api_user_id
+                },
+                'action': action,
+                'time': attendance.check_in.strftime('%H:%M:%S'),
+                'confidence': f"{confidence:.2f}%",
+                'distance': f"{distance:.4f}"
+            })
+
+        if action == 'check_out' and attendance.check_out is not None:
+            return JsonResponse({
+                'success': True,
+                'already_done': True,
+                'message': f'{recognized_user.get_display_name()} already checked out at {attendance.check_out.strftime("%H:%M:%S")}.',
+                'user': {
+                    'username': recognized_user.username,
+                    'display_name': recognized_user.get_display_name(),
+                    'email': recognized_user.email,
+                    'api_id': recognized_user.api_user_id
+                },
+                'action': action,
+                'time': attendance.check_out.strftime('%H:%M:%S'),
+                'confidence': f"{confidence:.2f}%",
+                'distance': f"{distance:.4f}"
+            })
+
+        if action == 'check_out' and attendance.check_in is None:
+            return JsonResponse({
+                'success': False,
+                'error': f'{recognized_user.get_display_name()} has not checked in yet. Please check in first.'
+            })
+
         # Post attendance to external API
         if action == 'check_in':
             api_response = check_in_user(recognized_user.api_user_id)
         else:
             api_response = check_out_user(recognized_user.api_user_id)
-        
+
         if not api_response['success']:
             return JsonResponse({
                 'success': False,
                 'error': f"API Error: {api_response['message']}"
             })
-        
-        # Update local attendance record
+
         if action == 'check_in':
             attendance.check_in = current_time
             attendance.status = 'Checked In'
+            attendance.check_in_confidence = round(confidence, 2)
         else:
             attendance.check_out = current_time
             if attendance.check_in:
                 attendance.status = 'Present'
-        
+            attendance.check_out_confidence = round(confidence, 2)
+
+        attendance.api_message = api_response.get('message', '')
         attendance.save()
-        
+
         return JsonResponse({
             'success': True,
             'message': f'{recognized_user.get_display_name()} {action.replace("_", " ")} successful!',
