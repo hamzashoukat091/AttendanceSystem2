@@ -489,6 +489,94 @@
                 gap: 12px;
             }
         }
+
+        /* Position guide overlay (pre-group countdown) */
+        .position-guide-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            border-radius: 16px;
+            text-align: center;
+            gap: 16px;
+        }
+        .position-guide-overlay.active { display: flex; }
+        .position-guide-overlay .pose-label {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.3;
+        }
+        .position-guide-overlay .pose-sub {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.65);
+        }
+        .position-guide-overlay .countdown-ring {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: rgba(121, 75, 196, 0.25);
+        }
+
+        /* Processing overlay (batch upload/embedding phase) */
+        .processing-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            border-radius: 16px;
+            gap: 20px;
+            text-align: center;
+        }
+        .processing-overlay.active { display: flex; }
+        .processing-overlay .spinner {
+            width: 52px;
+            height: 52px;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .processing-overlay .proc-label {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .processing-overlay .proc-sub {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.65);
+            max-width: 260px;
+        }
+
+        /* Retry panel */
+        #retryPanel {
+            display: none;
+            padding: 16px;
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-radius: 12px;
+            text-align: center;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #retryPanel.active { display: flex; }
+        #retryMessage { color: var(--text-sub); font-size: 0.88rem; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -509,6 +597,20 @@
                 <canvas id="canvas"></canvas>
                 <div id="detectionIndicator" class="face-not-detected">⚠️ No Face Detected</div>
                 <div id="positionGuide" class="position-guide"></div>
+
+                <!-- Pre-group position guide with countdown -->
+                <div id="positionGuideOverlay" class="position-guide-overlay">
+                    <div class="pose-label" id="overlayPoseLabel"></div>
+                    <div class="countdown-ring" id="overlayCountdown">3</div>
+                    <div class="pose-sub" id="overlayPoseSub"></div>
+                </div>
+
+                <!-- Processing overlay shown after all frames captured -->
+                <div id="processingOverlay" class="processing-overlay">
+                    <div class="spinner"></div>
+                    <div class="proc-label" id="procLabel">Creating Face Profile...</div>
+                    <div class="proc-sub" id="procSub">Processing images — please wait (~15s)</div>
+                </div>
             </div>
             
             <div class="status-display">
@@ -537,6 +639,13 @@
                 <button class="btn-success" id="doneBtn" style="display:none;">
                     ✓ Done
                 </button>
+
+                <!-- Retry panel shown on partial failure or network error -->
+                <div id="retryPanel">
+                    <p style="color: var(--danger-dark); font-weight: 600;">Registration Failed</p>
+                    <p id="retryMessage"></p>
+                    <button class="btn-primary" id="retryBtn">🔄 Retry Capture</button>
+                </div>
             </div>
 
             {% if has_existing_face %}
@@ -563,8 +672,8 @@
                 <p><strong>Images 1-5:</strong> <span>Look straight ahead (Front)</span></p>
                 <p><strong>Images 6-10:</strong> <span>Look up slightly</span></p>
                 <p><strong>Images 11-15:</strong> <span>Look down slightly</span></p>
-                <p><strong>Images 16-20:</strong> <span>Turn head left</span></p>
-                <p><strong>Images 21-25:</strong> <span>Turn head right</span></p>
+                <p><strong>Images 16-20:</strong> <span>Turn slightly left (~30°)</span></p>
+                <p><strong>Images 21-25:</strong> <span>Turn slightly right (~30°)</span></p>
             </div>
         </div>
     </div>
@@ -584,21 +693,25 @@
         const detectionIndicator = document.getElementById('detectionIndicator');
         const positionGuide = document.getElementById('positionGuide');
         
-        let currentCount = 0;  // Always start from 0
+        let currentCount = 0;
         const requiredCount = {{ required_count }};
         const userId = {{ user.api_user_id }};
         const hasExistingFace = {{ has_existing_face|yesno:"true,false" }};
         let isCapturing = false;
         let faceDetected = false;
         let modelsLoaded = false;
+        const capturedFrames = [];  // local buffer — no backend calls during capture
+        let existingFaceHandled = false;  // tracks whether delete-existing was already done this session
+        let lastFaceDetectedTime = 0;     // timestamp of last successful face detection (set when models load)
+        let isReloadingModels = false;    // guard against concurrent background reloads
         
         // Position guides for every 5 images
         const positionGuides = {
             0: { text: '👤 Look Straight Ahead', range: '1-5' },
             5: { text: '⬆️ Look Up Slightly', range: '6-10' },
             10: { text: '⬇️ Look Down Slightly', range: '11-15' },
-            15: { text: '⬅️ Turn Head Left', range: '16-20' },
-            20: { text: '➡️ Turn Head Right', range: '21-25' }
+            15: { text: '⬅️ Turn Slightly Left', range: '16-20' },
+            20: { text: '➡️ Turn Slightly Right', range: '21-25' }
         };
         
         // Load face-api.js models
@@ -613,6 +726,7 @@
                 ]);
                 
                 modelsLoaded = true;
+                lastFaceDetectedTime = Date.now();  // start 5s window from when models are ready
                 showMessage('Face detection ready!', 'success');
             } catch (err) {
                 showMessage('Error loading models: ' + err.message, 'error');
@@ -686,6 +800,7 @@
             if (detection) {
                 const wasFaceDetected = faceDetected;
                 faceDetected = true;
+                lastFaceDetectedTime = Date.now();  // reset the no-face timer
                 detectionIndicator.className = 'face-detected';
                 detectionIndicator.textContent = '✓ Face Detected';
                 drawDetection(detection);
@@ -708,11 +823,39 @@
                     positionGuide.innerHTML = '👤 Position Your Face in the Camera<br><small>Capture will resume when face is detected</small>';
                     positionGuide.style.display = 'block';
                 }
+
+                // Reload models in background if 5s passed with no face detected
+                if (modelsLoaded && !isReloadingModels && Date.now() - lastFaceDetectedTime > 5000) {
+                    reloadFaceAPI();  // fire-and-forget — RAF loop continues uninterrupted
+                }
             }
-            
+
             requestAnimationFrame(detectionLoop);
         }
         
+        // Reload face-api models in background after 5s no-detection timeout
+        async function reloadFaceAPI() {
+            isReloadingModels = true;
+            modelsLoaded = false;  // detectFace() will short-circuit (returns null) during reload
+            detectionIndicator.textContent = '⟳ Reinitializing...';
+            console.log('[FaceAPI] Reloading models due to 5s no-detection timeout');
+            try {
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
+                ]);
+                modelsLoaded = true;
+                console.log('[FaceAPI] Models reloaded successfully');
+            } catch (err) {
+                console.error('[FaceAPI] Reload failed:', err);
+                modelsLoaded = true;  // allow detection to continue even if reload fails
+            } finally {
+                lastFaceDetectedTime = Date.now();  // reset timer to avoid immediate re-trigger
+                isReloadingModels = false;
+            }
+        }
+
         // Show message
         function showMessage(text, type) {
             messageBox.innerHTML = `<div class="message ${type}">${text}</div>`;
@@ -723,171 +866,207 @@
             }, 3000);
         }
         
-        // Update progress
+        // Update progress bar (no side-effects — capture flow manages button state)
         function updateProgress() {
             const percentage = Math.min((currentCount / requiredCount) * 100, 100);
             progressFill.style.width = percentage + '%';
             progressText.textContent = `${currentCount}/${requiredCount}`;
-            
-            if (currentCount >= requiredCount) {
-                stopCapture();
-                doneBtn.style.display = 'flex';
-                startBtn.style.display = 'none';
-                showMessage('✓ All images captured! Click Done to finish.', 'success');
-            }
         }
-        
-        // Show position guide
-        function showPositionGuide() {
-            const guideKey = Math.floor(currentCount / 5) * 5;
-            const guide = positionGuides[guideKey];
-            
-            if (guide && currentCount % 5 === 0) {
-                positionGuide.innerHTML = `${guide.text}<br><small>Images ${guide.range}</small>`;
-                positionGuide.style.display = 'block';
-                
-                setTimeout(() => {
-                    positionGuide.style.display = 'none';
-                }, 3000);
-            }
-        }
-        
-        // Capture and save image
-        async function captureImage() {
-            if (!faceDetected || currentCount >= requiredCount) {
-                return;
-            }
-            
-            // Draw video frame to canvas
+
+        // Capture one frame to local buffer — no backend call
+        function captureFrameLocally() {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
-            
-            // Get image data
-            const imageData = canvas.toDataURL('image/jpeg', 0.9);
-            
+            capturedFrames.push(canvas.toDataURL('image/jpeg', 0.9));
+            currentCount = capturedFrames.length;
+            updateProgress();
+        }
+
+        // Show pre-group position guide overlay with countdown (BEFORE capturing each group)
+        async function showPositionGuideOverlay(groupIndex) {
+            const guideKey = groupIndex * 5;
+            const guide = positionGuides[guideKey];
+            if (!guide) return;
+
+            const overlay = document.getElementById('positionGuideOverlay');
+            document.getElementById('overlayPoseLabel').textContent = guide.text;
+            document.getElementById('overlayPoseSub').textContent = `Images ${guide.range}`;
+            const countdownEl = document.getElementById('overlayCountdown');
+
+            overlay.classList.add('active');
+            for (let i = 3; i >= 1; i--) {
+                if (!isCapturing) break;
+                countdownEl.textContent = i;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            overlay.classList.remove('active');
+        }
+
+        // Send all captured frames to backend in one batch call
+        async function batchUploadFrames() {
+            const procOverlay = document.getElementById('processingOverlay');
+            document.getElementById('procLabel').textContent = 'Creating Face Profile...';
+            document.getElementById('procSub').textContent =
+                `Processing ${capturedFrames.length} images — please wait (~15s)`;
+            procOverlay.classList.add('active');
+
             try {
-                const response = await fetch('{% url "save_face_image" %}', {
+                const response = await fetch('{% url "save_faces_batch" %}', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        image: imageData
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, images: capturedFrames })
                 });
-                
+
                 const result = await response.json();
-                
-                if (result.success) {
-                    currentCount = result.count;
-                    updateProgress();
-                    showPositionGuide();
+                procOverlay.classList.remove('active');
+
+                if (result.success && !result.below_minimum) {
+                    showMessage(`✓ Registration complete! ${result.embedded_count} face profiles saved.`, 'success');
+                    doneBtn.style.display = 'flex';
+                    startBtn.style.display = 'none';
+                } else if (result.success && result.below_minimum) {
+                    showRetryPanel(
+                        `Only ${result.embedded_count}/${capturedFrames.length} frames had a detectable face. ` +
+                        `Please retry in better lighting (need at least ${result.minimum_required}).`
+                    );
+                    startBtn.style.display = 'flex';
                 } else {
-                    showMessage('Error: ' + result.error, 'error');
+                    showRetryPanel(result.error || 'Upload failed. Please try again.');
+                    startBtn.style.display = 'flex';
                 }
             } catch (err) {
-                showMessage('Network error: ' + err.message, 'error');
+                document.getElementById('processingOverlay').classList.remove('active');
+                showRetryPanel('Network error: ' + err.message);
+                startBtn.style.display = 'flex';
             }
         }
-        
-        // Auto capture loop
-        let captureTimeout;
+
+        function showRetryPanel(message) {
+            document.getElementById('retryMessage').textContent = message;
+            document.getElementById('retryPanel').classList.add('active');
+        }
+
+        // Main capture orchestrator — two phases: fast local capture, then batch upload
         async function startAutoCapture() {
             if (!modelsLoaded) {
                 showMessage('Please wait for models to load', 'error');
                 return;
             }
-            
-            // If user has existing face data, delete it first
-            if (hasExistingFace && currentCount === 0) {
+
+            // Handle existing face data deletion — only once per page session
+            if (hasExistingFace && !existingFaceHandled) {
                 if (!confirm('This will delete all existing face images and start fresh. Continue?')) {
                     return;
                 }
-                
                 showMessage('Deleting old face data...', 'success');
                 startBtn.disabled = true;
-                
                 try {
                     const deleteResponse = await fetch('{% url "delete_face_data" user.api_user_id %}', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
+                        headers: { 'Content-Type': 'application/json' }
                     });
-                    
                     const deleteResult = await deleteResponse.json();
-                    
                     if (!deleteResult.success) {
                         showMessage('Error deleting old data: ' + deleteResult.error, 'error');
                         startBtn.disabled = false;
                         return;
                     }
-                    
-                    showMessage('Old data deleted. Starting fresh capture...', 'success');
-                    // Reset counter to 0
-                    currentCount = 0;
-                    updateProgress();
+                    existingFaceHandled = true;
+                    showMessage('Old data deleted. Starting fresh...', 'success');
                 } catch (err) {
                     showMessage('Error: ' + err.message, 'error');
                     startBtn.disabled = false;
                     return;
                 }
-                
                 startBtn.disabled = false;
             }
-            
+
+            // Reset for a fresh run
+            capturedFrames.length = 0;
+            currentCount = 0;
+            updateProgress();
+            document.getElementById('retryPanel').classList.remove('active');
+
             isCapturing = true;
             startBtn.style.display = 'none';
             stopBtn.style.display = 'flex';
             doneBtn.style.display = 'none';
-            showMessage('Auto-capture started. Position your face!', 'success');
-            showPositionGuide();
-            
-            // Recursive capture loop to prevent race conditions
-            const captureLoop = async () => {
-                if (!isCapturing) return;
 
-                if (faceDetected && currentCount < requiredCount) {
-                    await captureImage();
-                } else if (!faceDetected) {
-                    // Face not detected but still capturing - show waiting message
-                    console.log('Waiting for face detection to continue capture...');
+            const FRAMES_PER_GROUP = 5;
+            const CAPTURE_INTERVAL_MS = 1000;
+            const NUM_GROUPS = 5;
+
+            // Phase 1: Fast local capture — 5 groups of 5 frames
+            for (let group = 0; group < NUM_GROUPS; group++) {
+                if (!isCapturing) break;
+
+                // Show position guide BEFORE capturing this group
+                await showPositionGuideOverlay(group);
+                if (!isCapturing) break;
+
+                for (let frame = 0; frame < FRAMES_PER_GROUP; frame++) {
+                    if (!isCapturing) break;
+
+                    // Wait up to 3s for face detection before each frame
+                    let waited = 0;
+                    while (!faceDetected && waited < 3000 && isCapturing) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        waited += 100;
+                    }
+
+                    if (!faceDetected || !isCapturing) continue;
+
+                    captureFrameLocally();
+                    showMessage(`Captured ${currentCount}/${requiredCount}`, 'success');
+
+                    if (frame < FRAMES_PER_GROUP - 1) {
+                        await new Promise(resolve => setTimeout(resolve, CAPTURE_INTERVAL_MS));
+                    }
                 }
+            }
 
-                // Schedule next capture only if still capturing and not done
-                if (isCapturing && currentCount < requiredCount) {
-                    captureTimeout = setTimeout(captureLoop, 400);
-                }
-            };
+            isCapturing = false;
+            stopBtn.style.display = 'none';
 
-            // Start the loop
-            captureLoop();
+            if (capturedFrames.length === 0) {
+                showMessage('No frames captured. Ensure your face is visible and try again.', 'error');
+                startBtn.style.display = 'flex';
+                return;
+            }
+
+            // Phase 2: Batch upload and embedding creation
+            await batchUploadFrames();
         }
-        
+
         function stopCapture() {
             isCapturing = false;
-            if (captureTimeout) {
-                clearTimeout(captureTimeout);
-                captureTimeout = null;
-            }
+            document.getElementById('positionGuideOverlay').classList.remove('active');
+            document.getElementById('processingOverlay').classList.remove('active');
             startBtn.style.display = 'flex';
             stopBtn.style.display = 'none';
-            showMessage('Auto-capture paused', 'success');
+            showMessage('Capture stopped', 'success');
         }
-        
+
         // Start button
         startBtn.addEventListener('click', startAutoCapture);
-        
+
         // Stop button
         stopBtn.addEventListener('click', stopCapture);
-        
+
         // Done button
         doneBtn.addEventListener('click', function() {
-            if (confirm('Are you done with face registration?')) {
-                window.location.href = '{% url "select_user_registration" %}';
-            }
+            window.location.href = '{% url "select_user_registration" %}';
+        });
+
+        // Retry button
+        document.getElementById('retryBtn').addEventListener('click', function() {
+            document.getElementById('retryPanel').classList.remove('active');
+            existingFaceHandled = true;  // skip delete-confirm on retry — old data already handled
+            capturedFrames.length = 0;
+            currentCount = 0;
+            updateProgress();
+            startAutoCapture();
         });
         
         // Initialize - wait for face-api to load

@@ -209,6 +209,120 @@ def save_face_image(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+@csrf_exempt
+def save_faces_batch(request):
+    """
+    Batch face registration endpoint.
+    Accepts all captured frames at once and processes them synchronously.
+    Returns aggregate counts: saved, embedded, failed.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+    try:
+        import json
+        from .models import UserFaceEmbedding
+
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
+        images = data.get('images')
+
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'Missing user_id'})
+        if not images or not isinstance(images, list):
+            return JsonResponse({'success': False, 'error': 'Missing or invalid images list'})
+        if len(images) == 0:
+            return JsonResponse({'success': False, 'error': 'No images provided'})
+
+        # Cap at 25 to prevent abuse
+        images = images[:25]
+
+        user = CustomUser.objects.get(api_user_id=user_id)
+
+        user_folder = os.path.join(FACE_DB, user.username)
+        os.makedirs(user_folder, exist_ok=True)
+
+        saved_count = 0
+        embedded_count = 0
+        failed_count = 0
+
+        # Compute the starting offset once so filenames stay unique even if some frames are deleted
+        existing_at_start = len([f for f in os.listdir(user_folder) if f.lower().endswith('.jpg')])
+
+        for idx, image_data in enumerate(images):
+            frame_num = idx + 1
+
+            img = decode_base64_image(image_data)
+            if img is None:
+                logger.warning(f"Batch [{user.username}] frame {frame_num}: failed to decode")
+                failed_count += 1
+                continue
+
+            img_filename = f"{user.username}_{existing_at_start + frame_num}.jpg"
+            img_path = os.path.join(user_folder, img_filename)
+
+            if not cv2.imwrite(img_path, img):
+                logger.error(f"Batch [{user.username}] frame {frame_num}: cv2.imwrite failed")
+                failed_count += 1
+                continue
+
+            saved_count += 1
+
+            embedding = compute_face_embedding(img_path, model_name="SFace")
+
+            if embedding:
+                relative_path = os.path.join("faces", user.username, img_filename)
+                try:
+                    UserFaceEmbedding.objects.create(
+                        user=user,
+                        image_path=relative_path,
+                        embedding=embedding,
+                        model_name="SFace"
+                    )
+                    embedded_count += 1
+                    logger.info(f"Batch [{user.username}] frame {frame_num}: embedding saved")
+                except Exception as db_err:
+                    logger.warning(f"Batch [{user.username}] frame {frame_num}: DB error: {db_err}")
+            else:
+                logger.warning(f"Batch [{user.username}] frame {frame_num}: no face detected, removing image")
+                if os.path.exists(img_path):
+                    os.remove(img_path)
+                saved_count -= 1
+                failed_count += 1
+
+        MIN_EMBEDDINGS = 10
+        if embedded_count < MIN_EMBEDDINGS:
+            logger.warning(f"Batch [{user.username}]: only {embedded_count} embeddings, below minimum {MIN_EMBEDDINGS}")
+            return JsonResponse({
+                'success': True,
+                'saved_count': saved_count,
+                'embedded_count': embedded_count,
+                'failed_count': failed_count,
+                'below_minimum': True,
+                'minimum_required': MIN_EMBEDDINGS
+            })
+
+        user.has_face_data = True
+        user.face_images_count = UserFaceEmbedding.objects.filter(user=user).count()
+        user.save()
+
+        logger.info(f"Batch registration complete [{user.username}]: saved={saved_count}, embedded={embedded_count}, failed={failed_count}")
+
+        return JsonResponse({
+            'success': True,
+            'saved_count': saved_count,
+            'embedded_count': embedded_count,
+            'failed_count': failed_count,
+            'below_minimum': False
+        })
+
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User not found'})
+    except Exception as e:
+        logger.error(f"Error in save_faces_batch: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
 def attendance_scanner(request):
     """
     Main attendance scanner interface - no login required

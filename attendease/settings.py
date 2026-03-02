@@ -1,9 +1,23 @@
 from pathlib import Path
 import os
+import sys
+import logging
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 os.environ["DEEPFACE_HOME"] = os.path.join(BASE_DIR, "media", "deepface_models")
+
+# Suppress TensorFlow terminal noise
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"       # hide C++ info/warning messages
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"       # hide oneDNN custom operations message
+logging.getLogger("tensorflow").setLevel(logging.ERROR)  # hide Python-level TF warnings
+
+# Suppress lz4/TF destructor "Exception ignored" stderr noise
+def _suppress_unraisable(u):
+    if "lz4" in str(getattr(u, "object", "")) or "I/O operation on closed file" in str(u.exc_value):
+        return
+    sys.__unraisablehook__(u)
+sys.unraisablehook = _suppress_unraisable
 
 if os.environ.get('RENDER'):
     DEBUG = False

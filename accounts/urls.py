@@ -11,6 +11,7 @@ urlpatterns = [
     path('register/select/', simple_views.select_user_for_registration, name='select_user_registration'),
     path('register/face/<int:user_id>/', simple_views.register_face, name='register_face'),
     path('api/save-face/', simple_views.save_face_image, name='save_face_image'),
+    path('api/save-faces-batch/', simple_views.save_faces_batch, name='save_faces_batch'),
     path('delete-face-data/<int:user_id>/', simple_views.delete_face_data, name='delete_face_data'),
 
     # Attendance Scanning

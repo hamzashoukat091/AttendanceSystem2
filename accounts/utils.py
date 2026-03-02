@@ -25,7 +25,7 @@ def compute_face_embedding(image_path, model_name="SFace"):
         result = DeepFace.represent(
             img_path=image_path,
             model_name=model_name,
-            detector_backend="opencv",
+            detector_backend="mtcnn",
             enforce_detection=True
         )
         
