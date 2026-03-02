@@ -586,7 +586,7 @@
         
         let currentCount = 0;  // Always start from 0
         const requiredCount = {{ required_count }};
-        const userId = {{ user.id }};
+        const userId = {{ user.api_user_id }};
         const hasExistingFace = {{ has_existing_face|yesno:"true,false" }};
         let isCapturing = false;
         let faceDetected = false;
@@ -810,7 +810,7 @@
                 startBtn.disabled = true;
                 
                 try {
-                    const deleteResponse = await fetch('{% url "delete_face_data" user.id %}', {
+                    const deleteResponse = await fetch('{% url "delete_face_data" user.api_user_id %}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

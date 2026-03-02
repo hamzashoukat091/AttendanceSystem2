@@ -70,7 +70,10 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
             "user_id": str(user_id),
             "type": attendance_type
         }
-        
+
+        logger.info(f"ATTENDANCE API CALL → POST {API_ATTENDANCE_ENDPOINT}")
+        logger.info(f"  Payload: {payload}")
+
         response = requests.post(
             API_ATTENDANCE_ENDPOINT,
             json=payload,

@@ -272,7 +272,7 @@
 
         <div class="user-grid" id="userGrid">
             {% for user in all_users %}
-            <a href="{% url 'register_face' user.id %}" class="user-card" 
+            <a href="{% url 'register_face' user.api_user_id %}" class="user-card"
                data-name="{{ user.get_display_name|lower }}" 
                data-email="{{ user.email|lower }}"
                data-id="{{ user.api_user_id|lower }}">

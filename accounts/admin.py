@@ -49,8 +49,15 @@ class UserFaceEmbeddingInline(admin.TabularInline):
 # CustomUser Admin
 # ---------------------------
 class CustomUserAdmin(UserAdmin):
-    list_display = ("id", "username", "email", "enrollment_no", "user_type", "is_approved", "has_face_data", "embedding_count")
-    list_filter = ("is_approved", "user_type", "has_face_data")
+    list_display = (
+        "id", "username", "first_name", "last_name", "email",
+        "api_user_id", "user_type", "is_approved", "is_active",
+        "has_face_data", "face_images_count", "embedding_count",
+        "date_joined",
+    )
+    list_filter = ("is_approved", "is_active", "user_type", "has_face_data")
+    search_fields = ("username", "first_name", "last_name", "email", "api_user_id")
+    ordering = ("id",)
     actions = ["approve_users"]
     inlines = [UserFaceEmbeddingInline]
 
@@ -201,12 +208,18 @@ admin.site.register(UserFaceEmbedding, UserFaceEmbeddingAdmin)
 # Attendance Admin
 # ---------------------------
 class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ("user", "date", "status", "check_in", "check_out", "check_in_confidence", "check_out_confidence", "api_message")
+    list_display = (
+        "id", "user", "date", "status",
+        "check_in", "check_out",
+        "check_in_confidence", "check_out_confidence",
+        "api_message",
+    )
     list_filter = ("status", "date")
-    search_fields = ("user__username", "user__enrollment_no")
-    ordering = ("-date",)
+    search_fields = ("user__username", "user__first_name", "user__last_name", "user__email")
+    ordering = ("-date", "-check_in")
     readonly_fields = ("user", "date", "check_in", "check_out", "status", "check_in_confidence", "check_out_confidence", "api_message")
     date_hierarchy = "date"
+    list_per_page = 50
 
 
 admin.site.register(Attendance, AttendanceAdmin)

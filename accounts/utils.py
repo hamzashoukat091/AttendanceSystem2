@@ -96,37 +96,30 @@ def cosine_distance(embedding1, embedding2):
     return 1.0 - similarity
 
 
-def find_best_match(query_embedding, user_embeddings, threshold=0.33):
-    from .models import CustomUser
-    
+def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=None):
     best_user_id = None
     best_distance = float('inf')
     all_matches = []
-    
+
     for user_id, embeddings_list in user_embeddings.items():
         user_best_distance = float('inf')
-        
+
         for idx, stored_embedding in enumerate(embeddings_list):
             distance = cosine_distance(query_embedding, stored_embedding)
-            
+
             if distance < user_best_distance:
                 user_best_distance = distance
-            
+
             if distance < best_distance:
                 best_distance = distance
                 best_user_id = user_id
-        
+
         # Calculate confidence for this user
         user_confidence = (1.0 - user_best_distance) * 100
-        
-        # Get username for logging
-        try:
-            user = CustomUser.objects.get(id=user_id)
-            username = user.username
-            display_name = user.get_display_name()
-        except:
-            username = f"User_{user_id}"
-            display_name = username
+
+        # Get display name for logging (from caller-supplied map — no DB query)
+        display_name = (user_map or {}).get(user_id, f"User_{user_id}")
+        username = display_name
         
         all_matches.append({
             'user_id': user_id,

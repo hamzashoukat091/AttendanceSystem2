@@ -1,4 +1,5 @@
 import os
+import uuid
 import cv2
 import base64
 import numpy as np
@@ -50,7 +51,7 @@ def select_user_for_registration(request):
     
     if user_id:
         try:
-            selected_user = CustomUser.objects.get(id=user_id, api_user_id__isnull=False)
+            selected_user = CustomUser.objects.get(api_user_id=user_id)
         except CustomUser.DoesNotExist:
             pass
     
@@ -67,7 +68,7 @@ def register_face(request, user_id):
     Face registration interface - capture 25+ images
     """
     try:
-        user = CustomUser.objects.get(id=user_id)
+        user = CustomUser.objects.get(api_user_id=user_id)
     except CustomUser.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
     
@@ -96,8 +97,8 @@ def delete_face_data(request, user_id):
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
     
     try:
-        user = CustomUser.objects.get(id=user_id)
-        
+        user = CustomUser.objects.get(api_user_id=user_id)
+
         # Delete face folder and all images
         user_folder = os.path.join(FACE_DB, user.username)
         if os.path.exists(user_folder):
@@ -146,7 +147,7 @@ def save_face_image(request):
             return JsonResponse({'success': False, 'error': 'Missing user_id or image data'})
         
         # Get user
-        user = CustomUser.objects.get(id=user_id)
+        user = CustomUser.objects.get(api_user_id=user_id)
         
         # Decode image
         img = decode_base64_image(image_data)
@@ -237,8 +238,8 @@ def recognize_and_mark_attendance(request):
         if img is None:
             return JsonResponse({'success': False, 'error': 'Failed to decode image'})
         
-        # Save temporary image
-        temp_image = os.path.join(settings.MEDIA_ROOT, "temp_scan.jpg")
+        # Save temporary image with unique name to avoid concurrent-request collisions
+        temp_image = os.path.join(settings.MEDIA_ROOT, f"temp_scan_{uuid.uuid4().hex}.jpg")
         cv2.imwrite(temp_image, img)
         
         query_embedding = compute_face_embedding(temp_image, model_name="SFace")
@@ -253,22 +254,27 @@ def recognize_and_mark_attendance(request):
             })
         
         user_embeddings = {}
-        users_with_faces = CustomUser.objects.filter(has_face_data=True, api_user_id__isnull=False)
-        
+        users_with_faces = CustomUser.objects.filter(
+            has_face_data=True, api_user_id__isnull=False
+        ).prefetch_related('face_embeddings')
+
+        user_map = {}
         for user in users_with_faces:
-            embeddings = UserFaceEmbedding.objects.filter(user=user).values_list('embedding', flat=True)
+            embeddings = [e.embedding for e in user.face_embeddings.all()]
             if embeddings:
-                user_embeddings[user.id] = list(embeddings)
-        
+                user_embeddings[user.api_user_id] = embeddings
+                user_map[user.api_user_id] = user.get_display_name()
+
         DISTANCE_THRESHOLD = 0.33
-        
+
         logger.info(f"FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"Action: {action.upper()}")
-        
+
         user_id, distance, confidence = find_best_match(
-            query_embedding, 
-            user_embeddings, 
-            threshold=DISTANCE_THRESHOLD
+            query_embedding,
+            user_embeddings,
+            threshold=DISTANCE_THRESHOLD,
+            user_map=user_map,
         )
         
         # Clean up temp file
@@ -283,7 +289,7 @@ def recognize_and_mark_attendance(request):
             })
         
         # Get the recognized user
-        recognized_user = CustomUser.objects.get(id=user_id)
+        recognized_user = CustomUser.objects.get(api_user_id=user_id)
         now = datetime.now()
         current_time = now.time()
 
