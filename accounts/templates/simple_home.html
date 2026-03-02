@@ -380,6 +380,17 @@
             object-fit: cover;
             transform: scaleX(-1);
         }
+        #scannerBlurCanvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+            z-index: 1;
+            pointer-events: none;
+        }
         #scannerDrawCanvas {
             position: absolute;
             top: 0;
@@ -387,6 +398,7 @@
             width: 100%;
             height: 100%;
             transform: scaleX(-1);
+            z-index: 2;
         }
         #scannerOverlay .status-display {
             margin-top: 20px;
@@ -561,6 +573,7 @@
             <div class="camera-container">
                 <div class="video-wrapper">
                     <video id="scannerVideo" autoplay playsinline></video>
+                    <canvas id="scannerBlurCanvas"></canvas>
                     <canvas id="scannerDrawCanvas"></canvas>
                     <canvas id="scannerCaptureCanvas" style="display:none;"></canvas>
                     <div id="scannerFaceIndicator" class="face-not-detected">⚠️ No Face Detected</div>
@@ -699,6 +712,68 @@
         let scannerAction = null;
         let scannerLoopActive = false;
         let scannerProcessing = false;
+        let scannerBlurRAF = null;
+        const scannerCenterCanvas = document.createElement('canvas');
+        const scannerCenterCtx = scannerCenterCanvas.getContext('2d');
+
+        function renderScannerBlur() {
+            const video = document.getElementById('scannerVideo');
+            const bc = document.getElementById('scannerBlurCanvas');
+            if (!video.videoWidth || !video.videoHeight) {
+                scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
+                return;
+            }
+            if (bc.width !== video.videoWidth) bc.width = video.videoWidth;
+            if (bc.height !== video.videoHeight) bc.height = video.videoHeight;
+
+            const w = bc.width;
+            const h = bc.height;
+            const band = Math.round(w * 0.25);
+            const feather = 20;
+            const bCtx = bc.getContext('2d');
+
+            bCtx.clearRect(0, 0, w, h);
+
+            // Left band: blur + dim + feathered right edge
+            bCtx.save();
+            bCtx.beginPath();
+            bCtx.rect(0, 0, band + feather, h);
+            bCtx.clip();
+            bCtx.filter = 'blur(14px)';
+            bCtx.drawImage(video, 0, 0, w, h);
+            bCtx.filter = 'none';
+            bCtx.fillStyle = 'rgba(0,0,0,0.30)';
+            bCtx.fillRect(0, 0, band, h);
+            const leftFade = bCtx.createLinearGradient(band - feather, 0, band + feather, 0);
+            leftFade.addColorStop(0, 'rgba(0,0,0,0)');
+            leftFade.addColorStop(1, 'rgba(0,0,0,1)');
+            bCtx.globalCompositeOperation = 'destination-out';
+            bCtx.fillStyle = leftFade;
+            bCtx.fillRect(band - feather, 0, feather * 2, h);
+            bCtx.globalCompositeOperation = 'source-over';
+            bCtx.restore();
+
+            // Right band: blur + dim + feathered left edge
+            bCtx.save();
+            bCtx.beginPath();
+            bCtx.rect(w - band - feather, 0, band + feather, h);
+            bCtx.clip();
+            bCtx.filter = 'blur(14px)';
+            bCtx.drawImage(video, 0, 0, w, h);
+            bCtx.filter = 'none';
+            bCtx.fillStyle = 'rgba(0,0,0,0.30)';
+            bCtx.fillRect(w - band, 0, band, h);
+            const rightFade = bCtx.createLinearGradient(w - band - feather, 0, w - band + feather, 0);
+            rightFade.addColorStop(0, 'rgba(0,0,0,1)');
+            rightFade.addColorStop(1, 'rgba(0,0,0,0)');
+            bCtx.globalCompositeOperation = 'destination-out';
+            bCtx.fillStyle = rightFade;
+            bCtx.fillRect(w - band - feather, 0, feather * 2, h);
+            bCtx.globalCompositeOperation = 'source-over';
+            bCtx.restore();
+
+            scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
+        }
 
         function showScannerMessage(text, type) {
             const box = document.getElementById('scannerMessageBox');
@@ -744,18 +819,23 @@
             video.srcObject = cameraStream;
             video.play().catch(() => {});
 
-            // Start detection loop only after video dimensions are known
+            // Start detection + blur loops only after video dimensions are known
             if (video.videoWidth) {
+                scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
                 requestAnimationFrame(scannerDetectionLoop);
             } else {
                 video.addEventListener('loadedmetadata', () => {
-                    if (scannerLoopActive) requestAnimationFrame(scannerDetectionLoop);
+                    if (scannerLoopActive) {
+                        scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
+                        requestAnimationFrame(scannerDetectionLoop);
+                    }
                 }, { once: true });
             }
         }
 
         function closeScanner() {
             scannerLoopActive = false;
+            if (scannerBlurRAF) { cancelAnimationFrame(scannerBlurRAF); scannerBlurRAF = null; }
             clearInterval(scannerTimerInterval);
             const video = document.getElementById('scannerVideo');
             video.srcObject = null;  // Detach video but keep cameraStream alive for reuse
@@ -766,25 +846,25 @@
             if (!scannerLoopActive) return;
 
             const video = document.getElementById('scannerVideo');
-            const drawCanvas = document.getElementById('scannerDrawCanvas');
-            const ctx = drawCanvas.getContext('2d');
             const indicator = document.getElementById('scannerFaceIndicator');
 
             if (modelsLoaded && video.videoWidth) {
-                if (drawCanvas.width !== video.videoWidth) {
-                    drawCanvas.width = video.videoWidth;
-                    drawCanvas.height = video.videoHeight;
-                }
                 try {
-                    const detection = await faceapi
-                        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                        .withFaceLandmarks();
+                    // Crop center 50% only — faces in the blurred side bands are ignored
+                    const srcX = Math.round(video.videoWidth * 0.25);
+                    const srcW = Math.round(video.videoWidth * 0.50);
+                    scannerCenterCanvas.width = srcW;
+                    scannerCenterCanvas.height = video.videoHeight;
+                    scannerCenterCtx.drawImage(video, srcX, 0, srcW, video.videoHeight, 0, 0, srcW, video.videoHeight);
 
-                    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+                    const detection = await faceapi
+                        .detectSingleFace(scannerCenterCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
+                        .withFaceLandmarks();
 
                     if (detection) {
                         const box = detection.detection.box;
-                        const faceRatio = box.width / video.videoWidth;
+                        // faceRatio relative to center zone width
+                        const faceRatio = box.width / srcW;
 
                         let readyToScan = true;
                         if (faceRatio < 0.15) {
