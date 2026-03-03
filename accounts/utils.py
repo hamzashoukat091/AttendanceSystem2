@@ -94,7 +94,7 @@ def cosine_distance(embedding1, embedding2):
     return 1.0 - similarity
 
 
-def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=None):
+def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=None, silent=False):
     best_user_id = None
     best_distance = float('inf')
     all_matches = []
@@ -118,7 +118,7 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
         # Get display name for logging (from caller-supplied map — no DB query)
         display_name = (user_map or {}).get(user_id, f"User_{user_id}")
         username = display_name
-        
+
         all_matches.append({
             'user_id': user_id,
             'username': username,
@@ -127,49 +127,53 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
             'confidence': user_confidence,
             'embeddings_count': len(embeddings_list)
         })
-    
+
     # Sort matches by confidence (descending)
     all_matches.sort(key=lambda x: x['confidence'], reverse=True)
-    
-    # Log top 5 matches
-    logger.info("TOP 5 MATCHING RESULTS:")
-    logger.info("-" * 85)
-    logger.info(f"{'Rank':<6} {'Username':<20} {'Display Name':<25} {'Distance':<10} {'Confidence':<12} {'Pass'}")
-    logger.info("-" * 85)
-    
-    for rank, match in enumerate(all_matches[:5], 1):
-        passed = "[PASS]" if match['distance'] <= threshold else "[FAIL]"
-        logger.info(
-            f"{rank:<6} {match['username']:<20} {match['display_name']:<25} "
-            f"{match['distance']:<10.4f} {match['confidence']:>6.2f}%     {passed}"
-        )
-    
+
+    if not silent:
+        # Log top 5 matches
+        logger.info("TOP 5 MATCHING RESULTS:")
+        logger.info("-" * 85)
+        logger.info(f"{'Rank':<6} {'Username':<20} {'Display Name':<25} {'Distance':<10} {'Confidence':<12} {'Pass'}")
+        logger.info("-" * 85)
+
+        for rank, match in enumerate(all_matches[:5], 1):
+            passed = "[PASS]" if match['distance'] <= threshold else "[FAIL]"
+            logger.info(
+                f"{rank:<6} {match['username']:<20} {match['display_name']:<25} "
+                f"{match['distance']:<10.4f} {match['confidence']:>6.2f}%     {passed}"
+            )
+
     # Count how many users passed the threshold
     passing_count = sum(1 for m in all_matches if m['distance'] <= threshold)
-    
+
     if passing_count > 2:
-        logger.info("="*80)
-        logger.warning(f"  [AMBIGUOUS MATCH] - {passing_count} users passed the threshold (> 2).")
-        logger.warning("  Rejecting result to prevent false positive.")
-        logger.info("="*80)
+        if not silent:
+            logger.info("="*80)
+            logger.warning(f"  [AMBIGUOUS MATCH] - {passing_count} users passed the threshold (> 2).")
+            logger.warning("  Rejecting result to prevent false positive.")
+            logger.info("="*80)
         return None, None, None
 
     # Check if best match meets threshold
     if best_distance <= threshold:
         confidence = (1.0 - best_distance) * 100  # Convert to percentage
-        logger.info("="*80)
-        logger.info(f"  [MATCH FOUND]")
-        logger.info(f"  User: {all_matches[0]['display_name']} ({all_matches[0]['username']})")
-        logger.info(f"  Distance: {best_distance:.4f} (threshold: {threshold})")
-        logger.info(f"  Confidence: {confidence:.2f}%")
-        logger.info("="*80)
+        if not silent:
+            logger.info("="*80)
+            logger.info(f"  [MATCH FOUND]")
+            logger.info(f"  User: {all_matches[0]['display_name']} ({all_matches[0]['username']})")
+            logger.info(f"  Distance: {best_distance:.4f} (threshold: {threshold})")
+            logger.info(f"  Confidence: {confidence:.2f}%")
+            logger.info("="*80)
         return best_user_id, best_distance, confidence
     else:
-        logger.info("="*80)
-        logger.info(f"  [NO MATCH] - Best distance {best_distance:.4f} exceeds threshold {threshold}")
-        if all_matches:
-            logger.info(f"  Closest was: {all_matches[0]['display_name']} with {all_matches[0]['confidence']:.2f}% confidence")
-        logger.info("="*80)
+        if not silent:
+            logger.info("="*80)
+            logger.info(f"  [NO MATCH] - Best distance {best_distance:.4f} exceeds threshold {threshold}")
+            if all_matches:
+                logger.info(f"  Closest was: {all_matches[0]['display_name']} with {all_matches[0]['confidence']:.2f}% confidence")
+            logger.info("="*80)
         return None, None, None
 
 
