@@ -753,9 +753,21 @@
             bCtx.fillRect(0, 0, w, h);
             bCtx.restore();
 
-            // Step 2: Draw the vertically-shifted video inside a circular clip.
+            // Step 2a: Erase the circle completely (destination-out zeros every pixel's alpha).
+            // This is more reliable than a black fill because canvas blur filter can leave
+            // residual blurred pixels that a plain fill() doesn't fully overwrite.
+            bCtx.save();
+            bCtx.globalCompositeOperation = 'destination-out';
+            bCtx.beginPath();
+            bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+            bCtx.fillStyle = 'rgba(0,0,0,1)';
+            bCtx.fill();
+            bCtx.restore();
+
+            // Step 2b: Draw the vertically-shifted video inside the now-transparent circle.
             // dy = -autoCenterOffsetNative: face below center (short user) → positive target → negative dy → shifts view up.
-            // This replaces the old destination-out hole — the canvas stays fully opaque so the raw video underneath is never visible.
+            // Any gap not covered by the shifted video stays transparent → shows black background
+            // (the video element is hidden with opacity:0, so only the wrapper's #000 background shows through).
             bCtx.save();
             bCtx.beginPath();
             bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -824,6 +836,7 @@
 
             const video = document.getElementById('scannerVideo');
             video.srcObject = cameraStream;
+            video.style.opacity = '0'; // hide raw element; canvas draws everything (drawImage still works on hidden video)
             video.play().catch(() => {});
 
             // Start detection + blur loops only after video dimensions are known
@@ -851,6 +864,7 @@
             if (scannerBlurRAF) { cancelAnimationFrame(scannerBlurRAF); scannerBlurRAF = null; }
             clearInterval(scannerTimerInterval);
             const video = document.getElementById('scannerVideo');
+            video.style.opacity = '';  // restore opacity
             video.srcObject = null;  // Detach video but keep cameraStream alive for reuse
             document.getElementById('scannerOverlay').classList.remove('active');
         }
@@ -894,6 +908,16 @@
 
                     if (detection) {
                         const box = detection.detection.box;
+
+                        // Update auto-centering from the main detection.
+                        // The center-crop has no vertical clipping, so box.y matches native video Y coords.
+                        // This is more reliable than the fast full-frame scan for faces near frame edges.
+                        {
+                            const faceCenterY = box.y + box.height / 2;
+                            const diff = faceCenterY - video.videoHeight / 2;
+                            autoCenterTargetNative = Math.max(-AUTOCENTER_MAX_PX, Math.min(AUTOCENTER_MAX_PX, diff));
+                        }
+
                         // faceRatio relative to center zone width
                         const faceRatio = box.width / srcW;
 
