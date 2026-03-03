@@ -713,12 +713,6 @@
         let scannerLoopActive = false;
         let scannerProcessing = false;
         let scannerBlurRAF = null;
-        // Auto-centering state
-        let autoCenterOffsetNative = 0;   // current lerped offset in native video px (applied each rAF)
-        let autoCenterTargetNative = 0;   // target offset set by detection loop
-        let autoCenterSkip = 0;           // skip counter: run centering detection every 2nd loop
-        const AUTOCENTER_MAX_PX = 120;    // max vertical shift (~25% of 480px native height)
-        const AUTOCENTER_LERP = 0.07;     // lerp speed per rAF frame (~1s convergence at 60fps)
         const scannerCenterCanvas = document.createElement('canvas');
         const scannerCenterCtx = scannerCenterCanvas.getContext('2d');
 
@@ -739,9 +733,6 @@
             const radius = Math.round(Math.min(w, h) * 0.42);
             const bCtx = bc.getContext('2d');
 
-            // Smooth interpolation toward target offset (runs at ~60fps)
-            autoCenterOffsetNative += (autoCenterTargetNative - autoCenterOffsetNative) * AUTOCENTER_LERP;
-
             bCtx.clearRect(0, 0, w, h);
 
             // Step 1: Draw blurred + dimmed over entire frame
@@ -753,26 +744,13 @@
             bCtx.fillRect(0, 0, w, h);
             bCtx.restore();
 
-            // Step 2a: Erase the circle completely (destination-out zeros every pixel's alpha).
-            // This is more reliable than a black fill because canvas blur filter can leave
-            // residual blurred pixels that a plain fill() doesn't fully overwrite.
+            // Step 2: Erase a clean hard-edged circle (fully transparent inside)
             bCtx.save();
             bCtx.globalCompositeOperation = 'destination-out';
-            bCtx.beginPath();
-            bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
             bCtx.fillStyle = 'rgba(0,0,0,1)';
-            bCtx.fill();
-            bCtx.restore();
-
-            // Step 2b: Draw the vertically-shifted video inside the now-transparent circle.
-            // dy = -autoCenterOffsetNative: face below center (short user) → positive target → negative dy → shifts view up.
-            // Any gap not covered by the shifted video stays transparent → shows black background
-            // (the video element is hidden with opacity:0, so only the wrapper's #000 background shows through).
-            bCtx.save();
             bCtx.beginPath();
             bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
-            bCtx.clip();
-            bCtx.drawImage(video, 0, 0, w, h, 0, -autoCenterOffsetNative, w, h);
+            bCtx.fill();
             bCtx.restore();
 
             // Step 3: Draw a subtle guide ring at the circle boundary
@@ -836,7 +814,6 @@
 
             const video = document.getElementById('scannerVideo');
             video.srcObject = cameraStream;
-            video.style.opacity = '0'; // hide raw element; canvas draws everything (drawImage still works on hidden video)
             video.play().catch(() => {});
 
             // Start detection + blur loops only after video dimensions are known
@@ -858,13 +835,9 @@
             faceDetectedSince = null;
             bestFrameScore = 0;
             retryCount = 0;
-            autoCenterOffsetNative = 0;
-            autoCenterTargetNative = 0;
-            autoCenterSkip = 0;
             if (scannerBlurRAF) { cancelAnimationFrame(scannerBlurRAF); scannerBlurRAF = null; }
             clearInterval(scannerTimerInterval);
             const video = document.getElementById('scannerVideo');
-            video.style.opacity = '';  // restore opacity
             video.srcObject = null;  // Detach video but keep cameraStream alive for reuse
             document.getElementById('scannerOverlay').classList.remove('active');
         }
@@ -877,24 +850,6 @@
 
             if (modelsLoaded && video.videoWidth) {
                 try {
-                    // Auto-centering: quick full-frame detection every 2nd loop to track face Y position.
-                    // Uses inputSize:128 (fast) — only needed for position, not attendance accuracy.
-                    if (++autoCenterSkip >= 2) {
-                        autoCenterSkip = 0;
-                        try {
-                            const trackDet = await faceapi.detectSingleFace(video,
-                                new faceapi.TinyFaceDetectorOptions({ inputSize: 128, scoreThreshold: 0.35 }));
-                            if (trackDet) {
-                                const faceCenterY = trackDet.box.y + trackDet.box.height / 2;
-                                const videoCenterY = video.videoHeight / 2;
-                                const diff = faceCenterY - videoCenterY; // positive = face below center (short user)
-                                autoCenterTargetNative = Math.max(-AUTOCENTER_MAX_PX, Math.min(AUTOCENTER_MAX_PX, diff));
-                            } else {
-                                autoCenterTargetNative *= 0.92; // slowly drift back to center when face is lost
-                            }
-                        } catch(e) { /* silent — centering is non-critical */ }
-                    }
-
                     // Crop center 50% only — faces in the blurred side bands are ignored
                     const srcX = Math.round(video.videoWidth * 0.25);
                     const srcW = Math.round(video.videoWidth * 0.50);
@@ -908,16 +863,6 @@
 
                     if (detection) {
                         const box = detection.detection.box;
-
-                        // Update auto-centering from the main detection.
-                        // The center-crop has no vertical clipping, so box.y matches native video Y coords.
-                        // This is more reliable than the fast full-frame scan for faces near frame edges.
-                        {
-                            const faceCenterY = box.y + box.height / 2;
-                            const diff = faceCenterY - video.videoHeight / 2;
-                            autoCenterTargetNative = Math.max(-AUTOCENTER_MAX_PX, Math.min(AUTOCENTER_MAX_PX, diff));
-                        }
-
                         // faceRatio relative to center zone width
                         const faceRatio = box.width / srcW;
 
@@ -946,11 +891,7 @@
                                 bestFrameScore = score;
                                 bestFrame.width = video.videoWidth;
                                 bestFrame.height = video.videoHeight;
-                                // Apply centering offset so backend receives a face-centered image
-                                bestFrame.getContext('2d').drawImage(
-                                    video, 0, 0, video.videoWidth, video.videoHeight,
-                                    0, -autoCenterOffsetNative, video.videoWidth, video.videoHeight
-                                );
+                                bestFrame.getContext('2d').drawImage(video, 0, 0);
                             }
                             const elapsed = Date.now() - faceDetectedSince;
                             if (elapsed >= 1000) {
@@ -988,15 +929,7 @@
             const src = (bestFrame.width > 0) ? bestFrame : video;
             captureCanvas.width = src.width || video.videoWidth;
             captureCanvas.height = src.height || video.videoHeight;
-            // bestFrame already has the centering offset baked in; for the fallback (video), apply it now
-            if (src === video) {
-                captureCanvas.getContext('2d').drawImage(
-                    video, 0, 0, video.videoWidth, video.videoHeight,
-                    0, -autoCenterOffsetNative, video.videoWidth, video.videoHeight
-                );
-            } else {
-                captureCanvas.getContext('2d').drawImage(src, 0, 0);
-            }
+            captureCanvas.getContext('2d').drawImage(src, 0, 0);
             bestFrameScore = 0;
             const imageData = captureCanvas.toDataURL('image/jpeg', 0.9);
 
