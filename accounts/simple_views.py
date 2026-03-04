@@ -414,7 +414,7 @@ def recognize_and_mark_attendance(request):
 
         # Duplicate check — before hitting external API
         if action == 'check_in' and attendance.check_in is not None:
-            logger.info(f"ALREADY CHECKED IN - {recognized_user.get_display_name()} at {attendance.check_in.strftime('%H:%M:%S')} | Confidence: {confidence:.2f}%")
+            logger.info(f"ALREADY CHECKED IN - {recognized_user.get_display_name()} | Confidence: {confidence:.2f}% | Distance: {distance:.4f}")
             return JsonResponse({
                 'success': True,
                 'already_done': True,
@@ -432,7 +432,7 @@ def recognize_and_mark_attendance(request):
             })
 
         if action == 'check_out' and attendance.check_out is not None:
-            logger.info(f"ALREADY CHECKED OUT - {recognized_user.get_display_name()} at {attendance.check_out.strftime('%H:%M:%S')} | Confidence: {confidence:.2f}%")
+            logger.info(f"ALREADY CHECKED OUT - {recognized_user.get_display_name()} | Confidence: {confidence:.2f}% | Distance: {distance:.4f}")
             return JsonResponse({
                 'success': True,
                 'already_done': True,
