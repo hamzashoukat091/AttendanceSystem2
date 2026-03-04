@@ -384,25 +384,25 @@ def recognize_and_mark_attendance(request):
         logger.info(f"FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"Action: {action.upper()}")
 
-        user_id, distance, confidence = find_best_match(
+        user_id, distance, confidence, log_match = find_best_match(
             query_embedding,
             user_embeddings,
             threshold=DISTANCE_THRESHOLD,
             user_map=user_map,
-            silent=True,
         )
-        
+
         # Clean up temp file
         if os.path.exists(temp_image):
             os.remove(temp_image)
-        
+
         if user_id is None:
+            log_match()
             logger.warning("RECOGNITION FAILED - No matching face found above threshold")
             return JsonResponse({
                 'success': False,
                 'error': 'Face not recognized. Please register first or try again with better lighting.'
             })
-        
+
         # Get the recognized user
         recognized_user = CustomUser.objects.get(api_user_id=user_id)
         now = datetime.now()
@@ -450,10 +450,14 @@ def recognize_and_mark_attendance(request):
             })
 
         if action == 'check_out' and attendance.check_in is None:
+            log_match()
             return JsonResponse({
                 'success': False,
                 'error': f'{recognized_user.get_display_name()} has not checked in yet. Please check in first.'
             })
+
+        # New check-in/check-out — log the match details now
+        log_match()
 
         # Post attendance to external API
         if action == 'check_in':
