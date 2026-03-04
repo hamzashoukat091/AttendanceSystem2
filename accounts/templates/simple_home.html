@@ -700,8 +700,18 @@
         async function startCamera() {
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480 }
+                    video: { facingMode: 'user', width: 640, height: 480 }
                 });
+                // Request continuous autofocus if the device supports it
+                const track = cameraStream.getVideoTracks()[0];
+                if (track) {
+                    const capabilities = track.getCapabilities?.() ?? {};
+                    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                        try {
+                            await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+                        } catch (focusErr) { /* not supported, ignore */ }
+                    }
+                }
                 console.log('Camera pre-started');
             } catch (err) {
                 console.warn('Camera pre-start failed:', err.message);
@@ -805,7 +815,9 @@
             // If camera wasn't pre-started yet (user clicked before getUserMedia resolved), start it now
             if (!cameraStream) {
                 try {
-                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: 640, height: 480 }
+                    });
                 } catch (err) {
                     showScannerMessage('❌ Cannot access camera: ' + err.message, 'error');
                     return;
@@ -816,16 +828,22 @@
             video.srcObject = cameraStream;
             video.play().catch(() => {});
 
+            function startDetectionAfterWarmup() {
+                showScannerMessage('📷 Camera adjusting...', 'processing');
+                setTimeout(() => {
+                    if (!scannerLoopActive) return;
+                    document.getElementById('scannerMessageBox').innerHTML = '';
+                    scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
+                    requestAnimationFrame(scannerDetectionLoop);
+                }, 1500);
+            }
+
             // Start detection + blur loops only after video dimensions are known
             if (video.videoWidth) {
-                scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
-                requestAnimationFrame(scannerDetectionLoop);
+                startDetectionAfterWarmup();
             } else {
                 video.addEventListener('loadedmetadata', () => {
-                    if (scannerLoopActive) {
-                        scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
-                        requestAnimationFrame(scannerDetectionLoop);
-                    }
+                    if (scannerLoopActive) startDetectionAfterWarmup();
                 }, { once: true });
             }
         }
