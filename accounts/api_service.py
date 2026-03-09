@@ -80,6 +80,17 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
             headers={'Content-Type': 'application/json'},
             timeout=10
         )
+
+        logger.debug(f"API response status: {response.status_code}, content length: {len(response.content)}")
+
+        if not response.content:
+            if response.ok:
+                logger.info(f"Attendance posted successfully for user {user_id} (empty body, status {response.status_code})")
+                return {'success': True, 'message': 'Attendance recorded'}
+            else:
+                logger.error(f"API returned HTTP {response.status_code} with empty body")
+                return {'success': False, 'message': f'API error (HTTP {response.status_code})'}
+
         data = response.json()
 
         # Success: HTTP 2xx with a message field (current API format)
@@ -106,7 +117,7 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
             'message': data.get('message', 'Failed to post attendance')
         }
             
-    except requests.RequestException as e:
+    except (requests.RequestException, ValueError) as e:
         logger.error(f"Error posting attendance to API: {str(e)}")
         return {
             'success': False,
