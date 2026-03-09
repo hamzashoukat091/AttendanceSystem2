@@ -83,7 +83,7 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
 
         logger.debug(f"API response status: {response.status_code}, content length: {len(response.content)}")
 
-        if not response.content:
+        if not response.content.strip():
             if response.ok:
                 logger.info(f"Attendance posted successfully for user {user_id} (empty body, status {response.status_code})")
                 return {'success': True, 'message': 'Attendance recorded'}
@@ -91,7 +91,14 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
                 logger.error(f"API returned HTTP {response.status_code} with empty body")
                 return {'success': False, 'message': f'API error (HTTP {response.status_code})'}
 
-        data = response.json()
+        try:
+            data = response.json()
+        except (ValueError, Exception) as json_err:
+            logger.error(f"Non-JSON response (status {response.status_code}): {response.content[:200]!r}")
+            if response.ok:
+                logger.info(f"Treating as success for user {user_id} despite non-JSON body")
+                return {'success': True, 'message': 'Attendance recorded'}
+            return {'success': False, 'message': f'Invalid API response (HTTP {response.status_code})'}
 
         # Success: HTTP 2xx with a message field (current API format)
         if response.ok and 'message' in data:
