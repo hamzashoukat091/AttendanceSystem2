@@ -90,123 +90,26 @@ def register_face(request, user_id):
 
 @csrf_exempt
 def delete_face_data(request, user_id):
-    """
-    Delete all existing face data (images and embeddings) for a user to allow recapture
-    """
+    """Delete all existing face data for a user to allow re-enrollment."""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
-    
     try:
         user = CustomUser.objects.get(api_user_id=user_id)
-
-        # Delete face folder and all images
         user_folder = os.path.join(FACE_DB, user.username)
         if os.path.exists(user_folder):
             import shutil
             shutil.rmtree(user_folder)
-            logger.info(f"Deleted face folder for {user.username}")
-        
-        # Delete all face embeddings from database
-        deleted_embeddings = UserFaceEmbedding.objects.filter(user=user).delete()
-        logger.info(f"Deleted {deleted_embeddings[0]} embeddings for {user.username}")
-        
-        # Update user flags
+        UserFaceEmbedding.objects.filter(user=user).delete()
         user.has_face_data = False
         user.face_images_count = 0
         user.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'All face data deleted successfully. You can now recapture.'
-        })
-        
+        return JsonResponse({'success': True})
     except CustomUser.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'User not found'})
     except Exception as e:
         logger.error(f"Error deleting face data: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)})
 
-
-@csrf_exempt
-def save_face_image(request):
-    """
-    Save captured face image for a user and compute embedding
-    """
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Invalid request method'})
-    
-    try:
-        import json
-        from .models import UserFaceEmbedding
-        
-        data = json.loads(request.body)
-        user_id = data.get('user_id')
-        image_data = data.get('image')
-        
-        if not user_id or not image_data:
-            return JsonResponse({'success': False, 'error': 'Missing user_id or image data'})
-        
-        # Get user
-        user = CustomUser.objects.get(api_user_id=user_id)
-        
-        # Decode image
-        img = decode_base64_image(image_data)
-        if img is None:
-            return JsonResponse({'success': False, 'error': 'Failed to decode image'})
-        
-        # Create user folder
-        user_folder = os.path.join(FACE_DB, user.username)
-        os.makedirs(user_folder, exist_ok=True)
-        
-        # Count existing images
-        img_count = len(os.listdir(user_folder))
-        
-        # Save image
-        img_filename = f"{user.username}_{img_count + 1}.jpg"
-        img_path = os.path.join(user_folder, img_filename)
-        cv2.imwrite(img_path, img)
-        
-        # Compute face embedding for fast recognition
-        embedding = compute_face_embedding(img_path, model_name="SFace")
-        
-        if embedding:
-            # Store embedding in database
-            # Use relative path for portability
-            relative_path = os.path.join("faces", user.username, img_filename)
-            
-            UserFaceEmbedding.objects.create(
-                user=user,
-                image_path=relative_path,
-                embedding=embedding,
-                model_name="SFace"
-            )
-            logger.info(f"Saved embedding for {img_filename}")
-        else:
-            logger.warning(f"Could not compute embedding for {img_filename}, removing dirty capture.")
-            if os.path.exists(img_path):
-                os.remove(img_path)
-            return JsonResponse({'success': False, 'error': 'No face detected. Please ensure your face is clearly visible.'})
-        
-        # Update user face count
-        user.face_images_count = img_count + 1
-        if not user.has_face_data:
-            user.has_face_data = True
-        user.save()
-        
-        logger.info(f"Saved face image {img_count + 1} for user {user.get_display_name()}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Image {img_count + 1} saved successfully',
-            'count': img_count + 1,
-            'has_embedding': embedding is not None
-        })
-        
-    except CustomUser.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'User not found'})
-    except Exception as e:
-        logger.error(f"Error saving face image: {str(e)}")
-        return JsonResponse({'success': False, 'error': str(e)})
 
 
 @csrf_exempt
@@ -323,16 +226,6 @@ def save_faces_batch(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-def attendance_scanner(request):
-    """
-    Main attendance scanner interface - no login required
-    """
-    context = {
-        'title': 'Face Attendance Scanner'
-    }
-    return render(request, 'attendance_scanner.html', context)
-
-
 @csrf_exempt
 def recognize_and_mark_attendance(request):
     if request.method != 'POST':
@@ -351,7 +244,7 @@ def recognize_and_mark_attendance(request):
         img = decode_base64_image(image_data)
         if img is None:
             return JsonResponse({'success': False, 'error': 'Failed to decode image'})
-        
+
         # Save temporary image with unique name to avoid concurrent-request collisions
         temp_image = os.path.join(settings.MEDIA_ROOT, f"temp_scan_{uuid.uuid4().hex}.jpg")
         cv2.imwrite(temp_image, img)
@@ -376,7 +269,11 @@ def recognize_and_mark_attendance(request):
         for user in users_with_faces:
             embeddings = [e.embedding for e in user.face_embeddings.all()]
             if embeddings:
-                user_embeddings[user.api_user_id] = embeddings
+                # Average all stored embeddings into one stable representative vector.
+                # This smooths out noise from lighting/angle variation across the 25
+                # enrollment photos, giving a more consistent match distance.
+                avg_embedding = np.mean(embeddings, axis=0).tolist()
+                user_embeddings[user.api_user_id] = [avg_embedding]
                 user_map[user.api_user_id] = user.get_display_name()
 
         DISTANCE_THRESHOLD = 0.30
@@ -511,12 +408,3 @@ def recognize_and_mark_attendance(request):
         })
 
 
-def view_users(request):
-    """View all registered users and their face registration status"""
-    users = CustomUser.objects.filter(api_user_id__isnull=False).order_by('username')
-    
-    context = {
-        'users': users,
-        'title': 'Registered Users'
-    }
-    return render(request, 'view_users.html', context)

@@ -1,4 +1,5 @@
 import os
+import cv2
 from django.conf import settings
 import logging
 import numpy as np
@@ -6,19 +7,48 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+def apply_clahe(img_bgr):
+    """
+    Normalize lighting using CLAHE on the L channel of LAB color space.
+    Reduces the effect of uneven/dim lighting on face embeddings.
+    """
+    lab = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    l_eq = clahe.apply(l)
+    lab_eq = cv2.merge([l_eq, a, b])
+    return cv2.cvtColor(lab_eq, cv2.COLOR_LAB2BGR)
+
+
 def compute_face_embedding(image_path, model_name="SFace"):
     """
     Compute face embedding for a given image using DeepFace.
-    
+    Applies CLAHE lighting normalization internally before computing the embedding
+    so that results are consistent whether called from views or management commands.
+
     Args:
         image_path: Absolute path to the face image
         model_name: DeepFace model to use (default: SFace)
-    
+
     Returns:
         list: 512D embedding vector as list, or None if failed
     """
+    import tempfile
+    tmp_path = None
     try:
         from deepface import DeepFace
+
+        # Read image and apply CLAHE for lighting normalization
+        img = cv2.imread(image_path)
+        if img is None:
+            logger.warning(f"Could not read image: {image_path}")
+            return None
+        img = apply_clahe(img)
+
+        # Write normalized image to a temp file for DeepFace
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+            tmp_path = tmp.name
+        cv2.imwrite(tmp_path, img)
 
         # Try MTCNN first (best alignment quality).
         # Fall back to opencv if MTCNN misses the face — opencv is more lenient
@@ -26,7 +56,7 @@ def compute_face_embedding(image_path, model_name="SFace"):
         for backend in ("mtcnn", "opencv"):
             try:
                 result = DeepFace.represent(
-                    img_path=image_path,
+                    img_path=tmp_path,
                     model_name=model_name,
                     detector_backend=backend,
                     enforce_detection=True
@@ -42,6 +72,9 @@ def compute_face_embedding(image_path, model_name="SFace"):
     except Exception as e:
         logger.error(f"Error computing embedding for {image_path}: {str(e)}")
         return None
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 
 def cosine_similarity(embedding1, embedding2):
@@ -163,6 +196,19 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
 
     if passing_count > 2:
         return None, None, None, log_results
+
+    # Reject if rank 1 and rank 2 are too close — prevents wrong-person recognition
+    # when two people have similar facial features (e.g. Hafiz vs Umar case)
+    MIN_GAP = 0.06
+    if len(all_matches) >= 2 and best_distance <= threshold:
+        gap = all_matches[1]['distance'] - all_matches[0]['distance']
+        if gap < MIN_GAP:
+            def log_results_with_gap_warning():
+                log_results()
+                logger.warning(f"  [AMBIGUOUS GAP] Rank 1 ({all_matches[0]['display_name']}: {all_matches[0]['distance']:.4f}) and "
+                               f"Rank 2 ({all_matches[1]['display_name']}: {all_matches[1]['distance']:.4f}) are too close "
+                               f"(gap={gap:.4f}, required>={MIN_GAP}). Rejecting to prevent wrong recognition.")
+            return None, None, None, log_results_with_gap_warning
 
     if best_distance <= threshold:
         confidence = (1.0 - best_distance) * 100  # Convert to percentage
