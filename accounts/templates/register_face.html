@@ -729,7 +729,7 @@
             const h = blurCanvas.height;
             const cx = w / 2;
             const cy = h / 2;
-            const radius = Math.round(Math.min(w, h) * 0.47);
+            const radius = Math.round(Math.min(w, h) * 0.42);
 
             blurCtx.clearRect(0, 0, w, h);
 
@@ -824,8 +824,8 @@
         async function detectFace() {
             if (!modelsLoaded || !video.videoWidth) return null;
 
-            const srcX = Math.round(video.videoWidth * 0.15);
-            const srcW = Math.round(video.videoWidth * 0.70);
+            const srcX = Math.round(video.videoWidth * 0.25);
+            const srcW = Math.round(video.videoWidth * 0.50);
             centerCanvas.width = srcW;
             centerCanvas.height = video.videoHeight;
             centerCtx.drawImage(video, srcX, 0, srcW, video.videoHeight, 0, 0, srcW, video.videoHeight);
@@ -843,12 +843,12 @@
             }
         }
         
-        // Draw detection box — offset x by 15% to map center-canvas coords back to full overlay
+        // Draw detection box — offset x by 25% to map center-canvas coords back to full overlay
         function drawDetection(detection) {
             overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
 
             if (detection) {
-                const offsetX = Math.round(overlay.width * 0.15);
+                const offsetX = Math.round(overlay.width * 0.25);
                 const box = detection.detection.box;
                 overlayCtx.strokeStyle = '#43e97b';
                 overlayCtx.lineWidth = 3;
