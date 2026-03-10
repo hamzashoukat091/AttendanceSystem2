@@ -740,7 +740,7 @@
             const h = bc.height;
             const cx = w / 2;
             const cy = h / 2;
-            const radius = Math.round(Math.min(w, h) * 0.42);
+            const radius = Math.round(Math.min(w, h) * 0.47);
             const bCtx = bc.getContext('2d');
 
             bCtx.clearRect(0, 0, w, h);
@@ -868,9 +868,9 @@
 
             if (modelsLoaded && video.videoWidth) {
                 try {
-                    // Crop center 50% only — faces in the blurred side bands are ignored
-                    const srcX = Math.round(video.videoWidth * 0.25);
-                    const srcW = Math.round(video.videoWidth * 0.50);
+                    // Crop center 70% only — faces in the blurred side bands are ignored
+                    const srcX = Math.round(video.videoWidth * 0.15);
+                    const srcW = Math.round(video.videoWidth * 0.70);
                     scannerCenterCanvas.width = srcW;
                     scannerCenterCanvas.height = video.videoHeight;
                     scannerCenterCtx.drawImage(video, srcX, 0, srcW, video.videoHeight, 0, 0, srcW, video.videoHeight);
