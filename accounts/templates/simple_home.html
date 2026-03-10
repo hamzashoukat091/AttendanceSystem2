@@ -885,11 +885,11 @@
                         const faceRatio = box.width / srcW;
 
                         let readyToScan = true;
-                        if (faceRatio < 0.15) {
+                        if (faceRatio < 0.10) {
                             indicator.textContent = '🔍 Move Closer';
                             indicator.className = 'face-not-detected';
                             readyToScan = false;
-                        } else if (faceRatio > 0.65) {
+                        } else if (faceRatio > 0.46) {
                             indicator.textContent = '↔️ Move Back';
                             indicator.className = 'face-not-detected';
                             readyToScan = false;
