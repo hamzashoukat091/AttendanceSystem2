@@ -305,7 +305,8 @@
             border-bottom: 1px solid var(--border);
             z-index: 100;
         }
-        #scannerOverlay .back-btn {
+        #scannerOverlay .back-btn,
+        #nameSelectOverlay .back-btn {
             display: inline-flex;
             align-items: center;
             padding: 10px 20px;
@@ -320,7 +321,8 @@
             cursor: pointer;
             font-family: inherit;
         }
-        #scannerOverlay .back-btn:hover {
+        #scannerOverlay .back-btn:hover,
+        #nameSelectOverlay .back-btn:hover {
             border-color: var(--primary);
             color: var(--primary);
             transform: translateX(-2px);
@@ -528,6 +530,137 @@
             #scannerOverlay .status-display { padding: 12px; margin-top: 12px; }
             #scannerOverlay .status-display h2 { font-size: 1rem; }
         }
+
+        /* ── Name Selection Overlay ── */
+        #nameSelectOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            flex-direction: column;
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(121, 75, 196, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
+        }
+        #nameSelectOverlay.active { display: flex; }
+        #nameSelectOverlay .ns-top-bar {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,0.07);
+            flex-shrink: 0;
+        }
+        #nameSelectOverlay .ns-header h1 { font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin: 0; }
+        #nameSelectOverlay .ns-header p  { font-size: 0.85rem; color: var(--text-sub); margin: 3px 0 0 0; }
+        .ns-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 28px 60px 28px;
+            overflow: hidden;
+            min-height: 0;
+        }
+        .ns-selected-label {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            font-weight: 500;
+            margin-bottom: 12px;
+            text-align: center;
+            min-height: 20px;
+        }
+        .ns-selected-label span { color: var(--primary); font-weight: 700; }
+        .ns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 14px;
+            overflow: hidden;
+            flex: 1;
+            align-content: start;
+            min-height: 0;
+        }
+        .ns-user-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 18px 12px 16px;
+            text-align: center;
+            cursor: pointer;
+            font-family: inherit;
+            color: var(--text-main);
+            transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.1s;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .ns-user-card .ns-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            letter-spacing: 0;
+        }
+        .ns-user-card .ns-name {
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.35;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+        .ns-user-card:hover { border-color: var(--primary); background: #f5f0ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(121,75,196,0.12); }
+        .ns-user-card.selected {
+            border-color: var(--primary);
+            background: #ede9fe;
+            color: var(--primary-dark);
+            box-shadow: 0 0 0 3px rgba(121,75,196,0.25), 0 4px 12px rgba(121,75,196,0.15);
+        }
+        .ns-user-card.selected .ns-avatar {
+            background: linear-gradient(135deg, #8b5cf6, #5b21b6);
+        }
+        .ns-footer {
+            flex-shrink: 0;
+            padding: 16px 0 0;
+            display: flex;
+            justify-content: center;
+        }
+        .ns-proceed-btn {
+            padding: 14px 40px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 99px;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            opacity: 0.4;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .ns-proceed-btn.enabled { opacity: 1; pointer-events: auto; }
+        .ns-proceed-btn.enabled:hover { transform: scale(1.03); }
+        .ns-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--text-sub);
+            font-size: 0.95rem;
+            grid-column: 1 / -1;
+        }
+        .smsg.warning { background: #FFF7ED; color: #92400E; border-left: 4px solid #F59E0B; }
     </style>
 </head>
 <body>
@@ -545,18 +678,37 @@
         <div id="messageContainer" class="message-container"></div>
 
         <div class="cards">
-            <button onclick="openScanner('check_in'); this.blur();" class="card check-in">
+            <button onclick="openNameSelect('check_in'); this.blur();" class="card check-in">
                 <div class="card-icon">🏢</div>
                 <h2>Check In</h2>
             </button>
 
-            <button onclick="openScanner('check_out'); this.blur();" class="card check-out">
+            <button onclick="openNameSelect('check_out'); this.blur();" class="card check-out">
                 <div class="card-icon">🏠</div>
                 <h2>Check Out</h2>
             </button>
         </div>
 
         <a href="{% url 'select_user_registration' %}" class="register-link">Register</a>
+    </div>
+
+    <!-- Name Selection Overlay (shown before scanner) -->
+    <div id="nameSelectOverlay" role="dialog" aria-modal="true">
+        <div class="ns-top-bar">
+            <button class="back-btn" onclick="closeNameSelect()">← Back</button>
+            <div class="ns-header" style="text-align:center;">
+                <h1 id="nsTitle">Select Your Name</h1>
+                <p id="nsSubtitle">Click your name, then proceed to scan</p>
+            </div>
+            <div style="width:80px;"></div>
+        </div>
+        <div class="ns-body">
+            <div class="ns-selected-label" id="nsSelectedLabel">No name selected</div>
+            <div class="ns-grid" id="nsGrid"><div class="ns-loading">Loading users...</div></div>
+            <div class="ns-footer">
+                <button class="ns-proceed-btn" id="nsProceedBtn" onclick="proceedToScanner()">Proceed to Scan →</button>
+            </div>
+        </div>
     </div>
 
     <!-- Full-screen attendance scanner overlay (camera pre-started at app load) -->
@@ -718,6 +870,94 @@
             }
         }
 
+        // --- Name selection state ---
+        let selectedUserId = null;
+        let selectedUserName = null;
+        let currentAction = null;
+        let usersCache = null;
+
+        async function openNameSelect(actionType) {
+            currentAction = actionType;
+            selectedUserId = null;
+            selectedUserName = null;
+            document.getElementById('nsTitle').textContent =
+                actionType === 'check_in' ? '👤 Check In — Select Your Name' : '👤 Check Out — Select Your Name';
+            document.getElementById('nsSelectedLabel').innerHTML = 'No name selected';
+            document.getElementById('nsProceedBtn').classList.remove('enabled');
+            document.getElementById('nameSelectOverlay').classList.add('active');
+            await populateNameGrid();
+        }
+
+        function closeNameSelect() {
+            document.getElementById('nameSelectOverlay').classList.remove('active');
+            selectedUserId = null;
+            selectedUserName = null;
+        }
+
+        async function populateNameGrid() {
+            const grid = document.getElementById('nsGrid');
+            if (usersCache) { renderNameGrid(usersCache); return; }
+            grid.innerHTML = '<div class="ns-loading">⏳ Loading users...</div>';
+            try {
+                const resp = await fetch('{% url "api_users" %}');
+                const data = await resp.json();
+                usersCache = data.users || [];
+                renderNameGrid(usersCache);
+            } catch (err) {
+                grid.innerHTML = '<div class="ns-loading" style="color:#EF4444;">Failed to load users. Please refresh.</div>';
+            }
+        }
+
+        function renderNameGrid(users) {
+            const grid = document.getElementById('nsGrid');
+            if (!users || users.length === 0) {
+                grid.innerHTML = '<div class="ns-loading">No registered users found.</div>';
+                return;
+            }
+            grid.innerHTML = users.map(u => {
+                const safeName = u.display_name.replace(/'/g, "\\'");
+                const initials = u.display_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+                return `<button class="ns-user-card" onclick="selectNameCard(this,${u.api_user_id},'${safeName}')">
+                    <div class="ns-avatar">${initials}</div>
+                    <span class="ns-name">${u.display_name}</span>
+                </button>`;
+            }).join('');
+        }
+
+        function selectNameCard(el, userId, userName) {
+            document.querySelectorAll('.ns-user-card.selected').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedUserId = userId;
+            selectedUserName = userName;
+            document.getElementById('nsSelectedLabel').innerHTML = `Selected: <span>${userName}</span>`;
+            document.getElementById('nsProceedBtn').classList.add('enabled');
+        }
+
+        function proceedToScanner() {
+            if (!selectedUserId) return;
+            document.getElementById('nameSelectOverlay').classList.remove('active');
+            openScanner(currentAction);
+        }
+
+        function showMainPageMessage(text, type) {
+            const mc = document.getElementById('messageContainer');
+            const styles = {
+                success: { bg: '#d4edda', color: '#155724', border: '#28a745', icon: '✓' },
+                warning: { bg: '#fff3cd', color: '#856404', border: '#ffc107', icon: '⚠️' },
+                error:   { bg: '#f8d7da', color: '#721c24', border: '#dc3545', icon: '✗' },
+            };
+            const s = styles[type] || styles.success;
+            mc.innerHTML = `
+                <div class="message" style="background:${s.bg};color:${s.color};border-left:5px solid ${s.border};display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:12px;">
+                    <span>${s.icon}</span><span>${text}</span>
+                </div>`;
+            setTimeout(() => {
+                mc.style.transition = 'opacity 0.5s';
+                mc.style.opacity = '0';
+                setTimeout(() => { mc.innerHTML = ''; mc.style.opacity = '1'; }, 500);
+            }, 5000);
+        }
+
         // --- Scanner overlay state ---
         let scannerAction = null;
         let scannerLoopActive = false;
@@ -805,6 +1045,8 @@
             const modeText = actionType === 'check_in' ? 'Check In' : 'Check Out';
             document.getElementById('scannerModeDisplay').textContent = `Scanning for ${modeText}...`;
             document.getElementById('scannerMessageBox').innerHTML = '';
+            const scannerTimeSub = document.getElementById('scannerSystemTime');
+            if (selectedUserName && scannerTimeSub) scannerTimeSub.textContent = `Verifying: ${selectedUserName}`;
             document.getElementById('scannerFaceIndicator').textContent = '⚠️ No Face Detected';
             document.getElementById('scannerFaceIndicator').className = 'face-not-detected';
 
@@ -955,23 +1197,26 @@
                 const response = await fetch('{% url "recognize_and_mark" %}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: imageData, action: scannerAction })
+                    body: JSON.stringify({ image: imageData, action: scannerAction, selected_user_id: selectedUserId })
                 });
                 const result = await response.json();
 
                 if (result.success) {
                     retryCount = 0;
-                    showScannerMessage('✓ Attendance Marked!', 'success');
-                    setTimeout(() => {
-                        closeScanner();
-                        sessionStorage.setItem('attendance_notification', JSON.stringify({
-                            status: 'success',
-                            action: result.action,
-                            user: result.user.display_name,
-                            already_done: result.already_done
-                        }));
-                        showNotification();
-                    }, 500);
+                    const apiStatus = result.status || 'success';
+                    if (apiStatus === 'warning') {
+                        showScannerMessage('⚠️ ' + result.message, 'warning');
+                        setTimeout(() => {
+                            closeScanner();
+                            showMainPageMessage(result.message, 'warning');
+                        }, 1800);
+                    } else {
+                        showScannerMessage('✓ ' + result.message, 'success');
+                        setTimeout(() => {
+                            closeScanner();
+                            showMainPageMessage(result.message, 'success');
+                        }, 800);
+                    }
                 } else {
                     retryCount++;
                     if (retryCount <= 1) {
@@ -981,7 +1226,7 @@
                     } else {
                         retryCount = 0;
                         showScannerMessage('❌ ' + result.error, 'error');
-                        setTimeout(() => { scannerProcessing = false; }, 2000);
+                        setTimeout(() => { scannerProcessing = false; }, 2500);
                     }
                 }
             } catch (err) {

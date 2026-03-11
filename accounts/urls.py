@@ -14,4 +14,5 @@ urlpatterns = [
 
     # Attendance
     path('api/recognize/', simple_views.recognize_and_mark_attendance, name='recognize_and_mark'),
+    path('api/users/', simple_views.api_users, name='api_users'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

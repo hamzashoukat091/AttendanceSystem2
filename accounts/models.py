@@ -29,29 +29,6 @@ class CustomUser(AbstractUser):
         return f"{self.username} ({self.email})"
 
 
-class Attendance(models.Model):
-    STATUS_CHOICES = [
-        ("Checked In", "Checked In"),
-        ("Present", "Present"),
-        ("Absent", "Absent"),
-    ]
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='attendances')
-    date = models.DateField()
-    check_in = models.TimeField(null=True, blank=True)
-    check_out = models.TimeField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Absent")
-    check_in_confidence = models.FloatField(null=True, blank=True, help_text="Face recognition confidence % at check-in")
-    check_out_confidence = models.FloatField(null=True, blank=True, help_text="Face recognition confidence % at check-out")
-    api_message = models.CharField(max_length=255, blank=True, default="", help_text="Response message from external API")
-
-    class Meta:
-        unique_together = ("user", "date")
-        ordering = ["-date"]
-
-    def __str__(self):
-        return f"{self.user.username} — {self.date} ({self.status})"
-
 
 class UserFaceEmbedding(models.Model):
     """

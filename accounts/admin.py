@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
 
-from .models import CustomUser, UserFaceEmbedding, Attendance
+from .models import CustomUser, UserFaceEmbedding
 
 
 # ---------------------------
@@ -203,23 +203,3 @@ class UserFaceEmbeddingAdmin(admin.ModelAdmin):
 
 admin.site.register(UserFaceEmbedding, UserFaceEmbeddingAdmin)
 
-
-# ---------------------------
-# Attendance Admin
-# ---------------------------
-class AttendanceAdmin(admin.ModelAdmin):
-    list_display = (
-        "id", "user", "date", "status",
-        "check_in", "check_out",
-        "check_in_confidence", "check_out_confidence",
-        "api_message",
-    )
-    list_filter = ("status", "date")
-    search_fields = ("user__username", "user__first_name", "user__last_name", "user__email")
-    ordering = ("-date", "-check_in")
-    readonly_fields = ("user", "date", "check_in", "check_out", "status", "check_in_confidence", "check_out_confidence", "api_message")
-    date_hierarchy = "date"
-    list_per_page = 50
-
-
-admin.site.register(Attendance, AttendanceAdmin)

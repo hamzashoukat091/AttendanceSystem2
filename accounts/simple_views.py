@@ -7,10 +7,10 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
-from .models import CustomUser, UserFaceEmbedding, Attendance
+from .models import CustomUser, UserFaceEmbedding
 from .api_service import check_in_user, check_out_user
 from .utils import compute_face_embedding, find_best_match
 
@@ -39,6 +39,19 @@ def decode_base64_image(base64_string):
 def home(request):
     """Main landing page with options"""
     return render(request, 'simple_home.html')
+
+
+def api_users(request):
+    """Return list of all users with face data, for the name selection overlay."""
+    users = CustomUser.objects.filter(
+        has_face_data=True,
+        api_user_id__isnull=False
+    ).order_by('username').values('api_user_id', 'username')
+    return JsonResponse({'users': [
+        {'api_user_id': u['api_user_id'],
+         'display_name': u['username'].replace('_', ' ').title()}
+        for u in users
+    ]})
 
 
 def select_user_for_registration(request):
@@ -230,16 +243,20 @@ def save_faces_batch(request):
 def recognize_and_mark_attendance(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
-    
+
     try:
         import json
         data = json.loads(request.body)
         image_data = data.get('image')
         action = data.get('action', 'check_in')  # check_in or check_out
-        
+        selected_user_id = data.get('selected_user_id')
+
         if not image_data:
             return JsonResponse({'success': False, 'error': 'No image data provided'})
-        
+
+        if not selected_user_id:
+            return JsonResponse({'success': False, 'error': 'No user selected'})
+
         # Decode image
         img = decode_base64_image(image_data)
         if img is None:
@@ -248,18 +265,17 @@ def recognize_and_mark_attendance(request):
         # Save temporary image with unique name to avoid concurrent-request collisions
         temp_image = os.path.join(settings.MEDIA_ROOT, f"temp_scan_{uuid.uuid4().hex}.jpg")
         cv2.imwrite(temp_image, img)
-        
+
         query_embedding = compute_face_embedding(temp_image, model_name="SFace")
-        
+
         if query_embedding is None:
-            # Clean up temp file
             if os.path.exists(temp_image):
                 os.remove(temp_image)
             return JsonResponse({
                 'success': False,
                 'error': 'Could not detect face in the image. Please try again with better lighting.'
             })
-        
+
         user_embeddings = {}
         users_with_faces = CustomUser.objects.filter(
             has_face_data=True, api_user_id__isnull=False
@@ -276,10 +292,11 @@ def recognize_and_mark_attendance(request):
                 user_embeddings[user.api_user_id] = [avg_embedding]
                 user_map[user.api_user_id] = user.get_display_name()
 
-        DISTANCE_THRESHOLD = 0.30
+        DISTANCE_THRESHOLD = 0.45
 
         logger.info(f"FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"Action: {action.upper()}")
+        logger.info(f"Selected user ID: {selected_user_id}")
 
         user_id, distance, confidence, log_match = find_best_match(
             query_embedding,
@@ -297,64 +314,26 @@ def recognize_and_mark_attendance(request):
             logger.warning("RECOGNITION FAILED - No matching face found above threshold")
             return JsonResponse({
                 'success': False,
-                'error': 'Face not recognized. Please register first or try again with better lighting.'
+                'error': 'Face not recognized. Please try again with better lighting.'
             })
 
-        # Get the recognized user
-        recognized_user = CustomUser.objects.get(api_user_id=user_id)
-        now = datetime.now()
-        current_time = now.time()
-
-        # Day boundary: 8 AM to 8 AM next day
-        attendance_date = now.date() if now.hour >= 8 else (now - timedelta(days=1)).date()
-        attendance, _ = Attendance.objects.get_or_create(user=recognized_user, date=attendance_date)
-
-        # Duplicate check — before hitting external API
-        if action == 'check_in' and attendance.check_in is not None:
-            logger.info(f"ALREADY CHECKED IN - {recognized_user.get_display_name()} | Confidence: {confidence:.2f}% | Distance: {distance:.4f}")
-            return JsonResponse({
-                'success': True,
-                'already_done': True,
-                'message': f'{recognized_user.get_display_name()} already checked in at {attendance.check_in.strftime("%H:%M:%S")}.',
-                'user': {
-                    'username': recognized_user.username,
-                    'display_name': recognized_user.get_display_name(),
-                    'email': recognized_user.email,
-                    'api_id': recognized_user.api_user_id
-                },
-                'action': action,
-                'time': attendance.check_in.strftime('%H:%M:%S'),
-                'confidence': f"{confidence:.2f}%",
-                'distance': f"{distance:.4f}"
-            })
-
-        if action == 'check_out' and attendance.check_out is not None:
-            logger.info(f"ALREADY CHECKED OUT - {recognized_user.get_display_name()} | Confidence: {confidence:.2f}% | Distance: {distance:.4f}")
-            return JsonResponse({
-                'success': True,
-                'already_done': True,
-                'message': f'{recognized_user.get_display_name()} already checked out at {attendance.check_out.strftime("%H:%M:%S")}.',
-                'user': {
-                    'username': recognized_user.username,
-                    'display_name': recognized_user.get_display_name(),
-                    'email': recognized_user.email,
-                    'api_id': recognized_user.api_user_id
-                },
-                'action': action,
-                'time': attendance.check_out.strftime('%H:%M:%S'),
-                'confidence': f"{confidence:.2f}%",
-                'distance': f"{distance:.4f}"
-            })
-
-        if action == 'check_out' and attendance.check_in is None:
+        # Validate that recognized user matches the selected user
+        if str(user_id) != str(selected_user_id):
             log_match()
+            recognized_name = user_map.get(user_id, str(user_id))
+            selected_name = user_map.get(int(selected_user_id), str(selected_user_id))
+            logger.warning(
+                f"MISMATCH - Recognized: {recognized_name} (id={user_id}), "
+                f"Selected: {selected_name} (id={selected_user_id})"
+            )
             return JsonResponse({
                 'success': False,
-                'error': f'{recognized_user.get_display_name()} has not checked in yet. Please check in first.'
+                'error': 'Face does not match selected user. Please select your own name and try again.'
             })
 
-        # New check-in/check-out — log the match details now
         log_match()
+
+        recognized_user = CustomUser.objects.get(api_user_id=user_id)
 
         # Post attendance to external API
         if action == 'check_in':
@@ -368,34 +347,25 @@ def recognize_and_mark_attendance(request):
                 'error': f"API Error: {api_response['message']}"
             })
 
-        if action == 'check_in':
-            attendance.check_in = current_time
-            attendance.status = 'Checked In'
-            attendance.check_in_confidence = round(confidence, 2)
-        else:
-            attendance.check_out = current_time
-            if attendance.check_in:
-                attendance.status = 'Present'
-            attendance.check_out_confidence = round(confidence, 2)
+        api_status = api_response.get('status', 'success')
+        api_message = api_response.get('message', '')
 
-        attendance.api_message = api_response.get('message', '')
-        attendance.save()
+        logger.info(f"API response — status: {api_status}, message: {api_message}")
 
         return JsonResponse({
             'success': True,
-            'message': f'{recognized_user.get_display_name()} {action.replace("_", " ")} successful!',
+            'status': api_status,
+            'message': api_message,
             'user': {
                 'username': recognized_user.username,
                 'display_name': recognized_user.get_display_name(),
-                'email': recognized_user.email,
                 'api_id': recognized_user.api_user_id
             },
             'action': action,
-            'time': current_time.strftime('%H:%M:%S'),
             'confidence': f"{confidence:.2f}%",
             'distance': f"{distance:.4f}"
         })
-        
+
     except CustomUser.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'User data error'})
     except Exception as e:

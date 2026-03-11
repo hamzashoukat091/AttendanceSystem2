@@ -86,10 +86,10 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
         if not response.content.strip():
             if response.ok:
                 logger.info(f"Attendance posted successfully for user {user_id} (empty body, status {response.status_code})")
-                return {'success': True, 'message': 'Attendance recorded'}
+                return {'success': True, 'status': 'success', 'message': 'Attendance recorded'}
             else:
                 logger.error(f"API returned HTTP {response.status_code} with empty body")
-                return {'success': False, 'message': f'API error (HTTP {response.status_code})'}
+                return {'success': False, 'status': 'error', 'message': f'API error (HTTP {response.status_code})'}
 
         try:
             data = response.json()
@@ -97,15 +97,17 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
             logger.error(f"Non-JSON response (status {response.status_code}): {response.content[:200]!r}")
             if response.ok:
                 logger.info(f"Treating as success for user {user_id} despite non-JSON body")
-                return {'success': True, 'message': 'Attendance recorded'}
-            return {'success': False, 'message': f'Invalid API response (HTTP {response.status_code})'}
+                return {'success': True, 'status': 'success', 'message': 'Attendance recorded'}
+            return {'success': False, 'status': 'error', 'message': f'Invalid API response (HTTP {response.status_code})'}
 
         # Success: HTTP 2xx with a message field (current API format)
         if response.ok and 'message' in data:
             message = data['message']
-            logger.info(f"Attendance posted successfully for user {user_id}: {message}")
+            status = data.get('status', 'success')
+            logger.info(f"Attendance posted for user {user_id}: status={status}, message={message}")
             return {
                 'success': True,
+                'status': status,
                 'message': message
             }
 
@@ -115,12 +117,14 @@ def post_attendance(user_id: int, attendance_type: str) -> Dict:
             logger.info(f"Attendance posted successfully for user {user_id}: {message}")
             return {
                 'success': True,
+                'status': 'success',
                 'message': message
             }
 
         logger.error(f"API returned unsuccessful response: {data}")
         return {
             'success': False,
+            'status': 'error',
             'message': data.get('message', 'Failed to post attendance')
         }
             
