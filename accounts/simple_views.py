@@ -348,7 +348,7 @@ def recognize_and_mark_attendance(request):
             })
 
         api_status = api_response.get('status', 'success')
-        api_message = api_response.get('message', '')
+        api_message = api_response.get('message', '').replace('User', recognized_user.get_display_name(), 1)
 
         logger.info(f"API response — status: {api_status}, message: {api_message}")
 

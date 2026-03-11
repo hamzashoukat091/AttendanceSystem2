@@ -939,10 +939,7 @@
             mc.innerHTML = `
                 <div class="message" style="background:${s.bg};color:${s.color};border-left:5px solid ${s.border};display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:12px;">
                     <span style="font-size:1.1rem;">${s.icon}</span>
-                    <span>
-                        <strong style="display:block;font-size:1rem;margin-bottom:2px;">${userName}</strong>
-                        <span style="font-size:0.875rem;opacity:0.85;">${text}</span>
-                    </span>
+                    <span style="font-size:0.95rem;">${text}</span>
                 </div>`;
             setTimeout(() => {
                 mc.style.transition = 'opacity 0.5s';
