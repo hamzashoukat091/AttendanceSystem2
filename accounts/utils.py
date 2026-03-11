@@ -147,8 +147,8 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
                 f"{match['distance']:<10.4f} {match['confidence']:>6.2f}%     {passed}"
             )
         logger.info("="*80)
-        if passing_count > 2:
-            logger.warning(f"  [AMBIGUOUS MATCH] - {passing_count} users passed the threshold (> 2).")
+        if passing_count > 5:
+            logger.warning(f"  [AMBIGUOUS MATCH] - {passing_count} users passed the threshold (> 5).")
             logger.warning("  Rejecting result to prevent false positive.")
         elif best_distance <= threshold:
             logger.info(f"  [MATCH FOUND]")
@@ -161,7 +161,7 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
                 logger.info(f"  Closest was: {all_matches[0]['display_name']} with {all_matches[0]['confidence']:.2f}% confidence")
         logger.info("="*80)
 
-    if passing_count > 2:
+    if passing_count > 5:
         return None, None, None, log_results
 
     # Reject if rank 1 and rank 2 are too close — prevents wrong-person recognition
