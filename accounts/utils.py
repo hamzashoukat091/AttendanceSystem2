@@ -131,9 +131,6 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
     # Sort matches by confidence (descending)
     all_matches.sort(key=lambda x: x['confidence'], reverse=True)
 
-    # Count how many users passed the threshold
-    passing_count = sum(1 for m in all_matches if m['distance'] <= threshold)
-
     # Build a deferred log function so the caller can log AFTER checking "already done"
     def log_results():
         logger.info("TOP 5 MATCHING RESULTS:")
@@ -147,10 +144,7 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
                 f"{match['distance']:<10.4f} {match['confidence']:>6.2f}%     {passed}"
             )
         logger.info("="*80)
-        if passing_count > 5:
-            logger.warning(f"  [AMBIGUOUS MATCH] - {passing_count} users passed the threshold (> 5).")
-            logger.warning("  Rejecting result to prevent false positive.")
-        elif best_distance <= threshold:
+        if best_distance <= threshold:
             logger.info(f"  [MATCH FOUND]")
             logger.info(f"  User: {all_matches[0]['display_name']} ({all_matches[0]['username']})")
             logger.info(f"  Distance: {best_distance:.4f} (threshold: {threshold})")
@@ -160,22 +154,6 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
             if all_matches:
                 logger.info(f"  Closest was: {all_matches[0]['display_name']} with {all_matches[0]['confidence']:.2f}% confidence")
         logger.info("="*80)
-
-    if passing_count > 5:
-        return None, None, None, log_results
-
-    # Reject if rank 1 and rank 2 are too close — prevents wrong-person recognition
-    # when two people have similar facial features (e.g. Hafiz vs Umar case)
-    MIN_GAP = 0.06
-    if len(all_matches) >= 2 and best_distance <= threshold:
-        gap = all_matches[1]['distance'] - all_matches[0]['distance']
-        if gap < MIN_GAP:
-            def log_results_with_gap_warning():
-                log_results()
-                logger.warning(f"  [AMBIGUOUS GAP] Rank 1 ({all_matches[0]['display_name']}: {all_matches[0]['distance']:.4f}) and "
-                               f"Rank 2 ({all_matches[1]['display_name']}: {all_matches[1]['distance']:.4f}) are too close "
-                               f"(gap={gap:.4f}, required>={MIN_GAP}). Rejecting to prevent wrong recognition.")
-            return None, None, None, log_results_with_gap_warning
 
     if best_distance <= threshold:
         confidence = (1.0 - best_distance) * 100  # Convert to percentage

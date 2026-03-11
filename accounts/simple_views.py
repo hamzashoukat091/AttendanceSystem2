@@ -292,7 +292,7 @@ def recognize_and_mark_attendance(request):
                 user_embeddings[user.api_user_id] = [avg_embedding]
                 user_map[user.api_user_id] = user.get_display_name()
 
-        DISTANCE_THRESHOLD = 0.45
+        DISTANCE_THRESHOLD = 0.40
 
         logger.info(f"FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info(f"Action: {action.upper()}")
