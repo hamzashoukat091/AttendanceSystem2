@@ -698,16 +698,12 @@
             <button class="back-btn" onclick="closeNameSelect()">← Back</button>
             <div class="ns-header" style="text-align:center;">
                 <h1 id="nsTitle">Select Your Name</h1>
-                <p id="nsSubtitle">Click your name, then proceed to scan</p>
+                <p id="nsSubtitle">Tap your name to start scanning</p>
             </div>
             <div style="width:80px;"></div>
         </div>
         <div class="ns-body">
-            <div class="ns-selected-label" id="nsSelectedLabel">No name selected</div>
             <div class="ns-grid" id="nsGrid"><div class="ns-loading">Loading users...</div></div>
-            <div class="ns-footer">
-                <button class="ns-proceed-btn" id="nsProceedBtn" onclick="proceedToScanner()">Proceed to Scan →</button>
-            </div>
         </div>
     </div>
 
@@ -882,8 +878,6 @@
             selectedUserName = null;
             document.getElementById('nsTitle').textContent =
                 actionType === 'check_in' ? '👤 Check In — Select Your Name' : '👤 Check Out — Select Your Name';
-            document.getElementById('nsSelectedLabel').innerHTML = 'No name selected';
-            document.getElementById('nsProceedBtn').classList.remove('enabled');
             document.getElementById('nameSelectOverlay').classList.add('active');
             await populateNameGrid();
         }
@@ -925,21 +919,16 @@
         }
 
         function selectNameCard(el, userId, userName) {
-            document.querySelectorAll('.ns-user-card.selected').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             selectedUserId = userId;
             selectedUserName = userName;
-            document.getElementById('nsSelectedLabel').innerHTML = `Selected: <span>${userName}</span>`;
-            document.getElementById('nsProceedBtn').classList.add('enabled');
+            setTimeout(() => {
+                document.getElementById('nameSelectOverlay').classList.remove('active');
+                openScanner(currentAction);
+            }, 150);
         }
 
-        function proceedToScanner() {
-            if (!selectedUserId) return;
-            document.getElementById('nameSelectOverlay').classList.remove('active');
-            openScanner(currentAction);
-        }
-
-        function showMainPageMessage(text, type) {
+        function showMainPageMessage(userName, text, type) {
             const mc = document.getElementById('messageContainer');
             const styles = {
                 success: { bg: '#d4edda', color: '#155724', border: '#28a745', icon: '✓' },
@@ -948,8 +937,12 @@
             };
             const s = styles[type] || styles.success;
             mc.innerHTML = `
-                <div class="message" style="background:${s.bg};color:${s.color};border-left:5px solid ${s.border};display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:12px;">
-                    <span>${s.icon}</span><span>${text}</span>
+                <div class="message" style="background:${s.bg};color:${s.color};border-left:5px solid ${s.border};display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:12px;">
+                    <span style="font-size:1.1rem;">${s.icon}</span>
+                    <span>
+                        <strong style="display:block;font-size:1rem;margin-bottom:2px;">${userName}</strong>
+                        <span style="font-size:0.875rem;opacity:0.85;">${text}</span>
+                    </span>
                 </div>`;
             setTimeout(() => {
                 mc.style.transition = 'opacity 0.5s';
@@ -1204,17 +1197,18 @@
                 if (result.success) {
                     retryCount = 0;
                     const apiStatus = result.status || 'success';
+                    const displayName = result.user ? result.user.display_name : selectedUserName;
                     if (apiStatus === 'warning') {
                         showScannerMessage('⚠️ ' + result.message, 'warning');
                         setTimeout(() => {
                             closeScanner();
-                            showMainPageMessage(result.message, 'warning');
+                            showMainPageMessage(displayName, result.message, 'warning');
                         }, 1800);
                     } else {
                         showScannerMessage('✓ ' + result.message, 'success');
                         setTimeout(() => {
                             closeScanner();
-                            showMainPageMessage(result.message, 'success');
+                            showMainPageMessage(displayName, result.message, 'success');
                         }, 800);
                     }
                 } else {
