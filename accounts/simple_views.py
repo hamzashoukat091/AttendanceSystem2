@@ -433,7 +433,7 @@ def recognize_and_mark_attendance(request):
                 return JsonResponse({
                     'success': True,
                     'status': 'warning',
-                    'message': f'{display_name} is already {action_label} (since {marked_at})',
+                    'message': f'{display_name} is already {action_label} at {marked_at}',
                     'user': {
                         'username': recognized_user.username,
                         'display_name': display_name,
@@ -445,7 +445,7 @@ def recognize_and_mark_attendance(request):
                 })
 
             # Record the attendance locally before returning
-            now_str = datetime.now().strftime('%H:%M:%S')
+            now_str = datetime.now().strftime('%I:%M %p')
             if uid_str not in _daily_records:
                 _daily_records[uid_str] = {}
             _daily_records[uid_str][action] = now_str

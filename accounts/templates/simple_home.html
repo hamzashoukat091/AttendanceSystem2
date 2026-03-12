@@ -1195,19 +1195,8 @@
                     retryCount = 0;
                     const apiStatus = result.status || 'success';
                     const displayName = result.user ? result.user.display_name : selectedUserName;
-                    if (apiStatus === 'warning') {
-                        showScannerMessage('⚠️ ' + result.message, 'warning');
-                        setTimeout(() => {
-                            closeScanner();
-                            showMainPageMessage(displayName, result.message, 'warning');
-                        }, 1800);
-                    } else {
-                        showScannerMessage('✓ ' + result.message, 'success');
-                        setTimeout(() => {
-                            closeScanner();
-                            showMainPageMessage(displayName, result.message, 'success');
-                        }, 350);
-                    }
+                    closeScanner();
+                    showMainPageMessage(displayName, result.message, apiStatus === 'warning' ? 'warning' : 'success');
                 } else {
                     retryCount++;
                     if (retryCount <= 1) {
