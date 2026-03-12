@@ -712,7 +712,7 @@
         <div class="top-bar">
             <button class="back-btn" onclick="closeScanner()">← Back</button>
             <div class="header">
-                <h1>📸 Face Scanner</h1>
+                <h1 id="scannerTitle">📸 Face Scanner</h1>
                 <p id="scannerSystemTime"></p>
             </div>
             <div style="width: 80px;"></div>
@@ -1035,8 +1035,8 @@
             const modeText = actionType === 'check_in' ? 'Check In' : 'Check Out';
             document.getElementById('scannerModeDisplay').textContent = `Scanning for ${modeText}...`;
             document.getElementById('scannerMessageBox').innerHTML = '';
-            const scannerTimeSub = document.getElementById('scannerSystemTime');
-            if (selectedUserName && scannerTimeSub) scannerTimeSub.textContent = `Verifying: ${selectedUserName}`;
+            const scannerTitle = document.getElementById('scannerTitle');
+            if (scannerTitle) scannerTitle.textContent = selectedUserName ? `${selectedUserName} — ${modeText}` : `📸 Face Scanner`;
             document.getElementById('scannerFaceIndicator').textContent = '⚠️ No Face Detected';
             document.getElementById('scannerFaceIndicator').className = 'face-not-detected';
 
