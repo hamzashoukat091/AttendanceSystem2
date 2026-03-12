@@ -1,13 +1,14 @@
 import os
 import cv2
 import base64
+import json
 import threading
 import numpy as np
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from datetime import datetime
+from datetime import datetime, time as _time, timedelta
 import logging
 
 from .models import CustomUser, UserFaceEmbedding
@@ -65,6 +66,61 @@ def _get_embedding_cache():
         _user_obj_cache = user_obj_map
         logger.info(f"Embedding cache built: {len(user_embeddings)} users")
         return _embedding_cache, _user_map_cache, _user_obj_cache
+
+
+# ---------------------------------------------------------------------------
+# Daily attendance ledger  (8 am → next 8 am = one "day")
+# Stored in MEDIA_ROOT/attendance_logs/YYYY-MM-DD.json and mirrored in memory.
+# Used to detect duplicates instantly without waiting for the external API.
+# ---------------------------------------------------------------------------
+_daily_records: dict = {}       # {str(api_user_id): {"check_in": "HH:MM:SS", ...}}
+_daily_records_day = None       # date — which attendance-day is currently loaded
+_daily_records_lock = threading.Lock()
+
+
+def _attendance_day():
+    """Return the date that represents the current 8am–8am attendance window."""
+    now = datetime.now()
+    if now.time() >= _time(8, 0):
+        return now.date()
+    return (now - timedelta(days=1)).date()
+
+
+def _attendance_filepath(day):
+    log_dir = os.path.join(settings.MEDIA_ROOT, 'attendance_logs')
+    os.makedirs(log_dir, exist_ok=True)
+    return os.path.join(log_dir, f"{day}.json")
+
+
+def _ensure_daily_records():
+    """Reload from disk if the attendance day has rolled over. Must be called under _daily_records_lock."""
+    global _daily_records, _daily_records_day
+    today = _attendance_day()
+    if _daily_records_day == today:
+        return
+    _daily_records_day = today
+    filepath = _attendance_filepath(today)
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, 'r') as f:
+                _daily_records = json.load(f).get('records', {})
+        except Exception as e:
+            logger.error(f"Failed to load daily attendance file: {e}")
+            _daily_records = {}
+    else:
+        _daily_records = {}
+    logger.info(f"Daily attendance ledger loaded for {today}: {len(_daily_records)} users")
+
+
+def _save_daily_records():
+    """Persist current in-memory records to disk. Must be called under _daily_records_lock."""
+    today = _attendance_day()
+    filepath = _attendance_filepath(today)
+    try:
+        with open(filepath, 'w') as f:
+            json.dump({'day': str(today), 'records': _daily_records}, f, indent=2)
+    except Exception as e:
+        logger.error(f"Failed to write daily attendance file: {e}")
 
 
 def decode_base64_image(base64_string):
@@ -293,7 +349,6 @@ def recognize_and_mark_attendance(request):
         return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
     try:
-        import json
         data = json.loads(request.body)
         image_data = data.get('image')
         action = data.get('action', 'check_in')  # check_in or check_out
@@ -362,11 +417,42 @@ def recognize_and_mark_attendance(request):
         if recognized_user is None:
             return JsonResponse({'success': False, 'error': 'User data error'})
 
-        # Fire the external API call in a background thread so the user gets
-        # an instant response right after face recognition passes.
-        api_fn = check_in_user if action == 'check_in' else check_out_user
         api_uid = recognized_user.api_user_id
         display_name = recognized_user.get_display_name()
+        uid_str = str(api_uid)
+        action_label = 'Checked In' if action == 'check_in' else 'Checked Out'
+
+        # Check local daily ledger — instant duplicate detection, no API call needed.
+        with _daily_records_lock:
+            _ensure_daily_records()
+            user_record = _daily_records.get(uid_str, {})
+
+            if action in user_record:
+                marked_at = user_record[action]
+                logger.info(f"DUPLICATE {action.upper()} blocked for {display_name} (already at {marked_at})")
+                return JsonResponse({
+                    'success': True,
+                    'status': 'warning',
+                    'message': f'{display_name} is already {action_label} (since {marked_at})',
+                    'user': {
+                        'username': recognized_user.username,
+                        'display_name': display_name,
+                        'api_id': api_uid
+                    },
+                    'action': action,
+                    'confidence': f"{confidence:.2f}%",
+                    'distance': f"{distance:.4f}"
+                })
+
+            # Record the attendance locally before returning
+            now_str = datetime.now().strftime('%H:%M:%S')
+            if uid_str not in _daily_records:
+                _daily_records[uid_str] = {}
+            _daily_records[uid_str][action] = now_str
+            _save_daily_records()
+
+        # Fire the external API call in a background thread — user gets instant response.
+        api_fn = check_in_user if action == 'check_in' else check_out_user
 
         def _post_attendance():
             result = api_fn(api_uid)
@@ -377,7 +463,6 @@ def recognize_and_mark_attendance(request):
 
         threading.Thread(target=_post_attendance, daemon=True).start()
 
-        action_label = 'Checked In' if action == 'check_in' else 'Checked Out'
         return JsonResponse({
             'success': True,
             'status': 'success',
