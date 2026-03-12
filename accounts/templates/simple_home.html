@@ -1067,7 +1067,7 @@
                     document.getElementById('scannerMessageBox').innerHTML = '';
                     scannerBlurRAF = requestAnimationFrame(renderScannerBlur);
                     requestAnimationFrame(scannerDetectionLoop);
-                }, 1500);
+                }, 300);
             }
 
             // Start detection + blur loops only after video dimensions are known
@@ -1144,10 +1144,10 @@
                                 bestFrame.getContext('2d').drawImage(video, 0, 0);
                             }
                             const elapsed = Date.now() - faceDetectedSince;
-                            if (elapsed >= 1000) {
+                            if (elapsed >= 500) {
                                 scannerMarkAttendance();
                             } else {
-                                indicator.textContent = `✓ Hold Still... ${Math.ceil((1000 - elapsed) / 1000)}s`;
+                                indicator.textContent = `✓ Hold Still...`;
                                 indicator.className = 'face-detected';
                             }
                         } else if (!readyToScan) {
@@ -1206,7 +1206,7 @@
                         setTimeout(() => {
                             closeScanner();
                             showMainPageMessage(displayName, result.message, 'success');
-                        }, 800);
+                        }, 350);
                     }
                 } else {
                     retryCount++;

@@ -1,7 +1,7 @@
 import os
-import uuid
 import cv2
 import base64
+import threading
 import numpy as np
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -19,6 +19,52 @@ logger = logging.getLogger(__name__)
 # Face database path
 FACE_DB = os.path.join(settings.MEDIA_ROOT, "faces")
 os.makedirs(FACE_DB, exist_ok=True)
+
+# ---------------------------------------------------------------------------
+# In-memory embedding cache
+# Rebuilt from DB on first recognition request and after any face-data change.
+# Keyed by api_user_id; values are pre-averaged embedding vectors.
+# ---------------------------------------------------------------------------
+_embedding_cache = None   # {api_user_id: [avg_embedding]}
+_user_map_cache = None    # {api_user_id: display_name}
+_user_obj_cache = None    # {api_user_id: CustomUser}
+_cache_lock = threading.Lock()
+
+
+def _invalidate_embedding_cache():
+    global _embedding_cache, _user_map_cache, _user_obj_cache
+    with _cache_lock:
+        _embedding_cache = None
+        _user_map_cache = None
+        _user_obj_cache = None
+
+
+def _get_embedding_cache():
+    global _embedding_cache, _user_map_cache, _user_obj_cache
+    with _cache_lock:
+        if _embedding_cache is not None:
+            return _embedding_cache, _user_map_cache, _user_obj_cache
+
+        user_embeddings = {}
+        user_map = {}
+        user_obj_map = {}
+        users_with_faces = CustomUser.objects.filter(
+            has_face_data=True, api_user_id__isnull=False
+        ).prefetch_related('face_embeddings')
+
+        for user in users_with_faces:
+            embeddings = [e.embedding for e in user.face_embeddings.all()]
+            if embeddings:
+                avg_embedding = np.mean(embeddings, axis=0).tolist()
+                user_embeddings[user.api_user_id] = [avg_embedding]
+                user_map[user.api_user_id] = user.get_display_name()
+                user_obj_map[user.api_user_id] = user
+
+        _embedding_cache = user_embeddings
+        _user_map_cache = user_map
+        _user_obj_cache = user_obj_map
+        logger.info(f"Embedding cache built: {len(user_embeddings)} users")
+        return _embedding_cache, _user_map_cache, _user_obj_cache
 
 
 def decode_base64_image(base64_string):
@@ -116,6 +162,7 @@ def delete_face_data(request, user_id):
         user.has_face_data = False
         user.face_images_count = 0
         user.save()
+        _invalidate_embedding_cache()
         return JsonResponse({'success': True})
     except CustomUser.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'User not found'})
@@ -222,6 +269,7 @@ def save_faces_batch(request):
         user.face_images_count = UserFaceEmbedding.objects.filter(user=user).count()
         user.save()
 
+        _invalidate_embedding_cache()
         logger.info(f"Batch registration complete [{user.username}]: saved={saved_count}, embedded={embedded_count}, failed={failed_count}")
 
         return JsonResponse({
@@ -262,35 +310,16 @@ def recognize_and_mark_attendance(request):
         if img is None:
             return JsonResponse({'success': False, 'error': 'Failed to decode image'})
 
-        # Save temporary image with unique name to avoid concurrent-request collisions
-        temp_image = os.path.join(settings.MEDIA_ROOT, f"temp_scan_{uuid.uuid4().hex}.jpg")
-        cv2.imwrite(temp_image, img)
-
-        query_embedding = compute_face_embedding(temp_image, model_name="SFace")
+        # Pass numpy array directly — no temp file needed
+        query_embedding = compute_face_embedding(img, model_name="SFace", fast_mode=True)
 
         if query_embedding is None:
-            if os.path.exists(temp_image):
-                os.remove(temp_image)
             return JsonResponse({
                 'success': False,
                 'error': 'Could not detect face in the image. Please try again with better lighting.'
             })
 
-        user_embeddings = {}
-        users_with_faces = CustomUser.objects.filter(
-            has_face_data=True, api_user_id__isnull=False
-        ).prefetch_related('face_embeddings')
-
-        user_map = {}
-        for user in users_with_faces:
-            embeddings = [e.embedding for e in user.face_embeddings.all()]
-            if embeddings:
-                # Average all stored embeddings into one stable representative vector.
-                # This smooths out noise from lighting/angle variation across the 25
-                # enrollment photos, giving a more consistent match distance.
-                avg_embedding = np.mean(embeddings, axis=0).tolist()
-                user_embeddings[user.api_user_id] = [avg_embedding]
-                user_map[user.api_user_id] = user.get_display_name()
+        user_embeddings, user_map, user_obj_map = _get_embedding_cache()
 
         DISTANCE_THRESHOLD = 0.40
 
@@ -304,10 +333,6 @@ def recognize_and_mark_attendance(request):
             threshold=DISTANCE_THRESHOLD,
             user_map=user_map,
         )
-
-        # Clean up temp file
-        if os.path.exists(temp_image):
-            os.remove(temp_image)
 
         if user_id is None:
             log_match()
@@ -333,41 +358,40 @@ def recognize_and_mark_attendance(request):
 
         log_match()
 
-        recognized_user = CustomUser.objects.get(api_user_id=user_id)
+        recognized_user = user_obj_map.get(user_id)
+        if recognized_user is None:
+            return JsonResponse({'success': False, 'error': 'User data error'})
 
-        # Post attendance to external API
-        if action == 'check_in':
-            api_response = check_in_user(recognized_user.api_user_id)
-        else:
-            api_response = check_out_user(recognized_user.api_user_id)
+        # Fire the external API call in a background thread so the user gets
+        # an instant response right after face recognition passes.
+        api_fn = check_in_user if action == 'check_in' else check_out_user
+        api_uid = recognized_user.api_user_id
+        display_name = recognized_user.get_display_name()
 
-        if not api_response['success']:
-            return JsonResponse({
-                'success': False,
-                'error': f"API Error: {api_response['message']}"
-            })
+        def _post_attendance():
+            result = api_fn(api_uid)
+            if result['success']:
+                logger.info(f"Async attendance API OK for {display_name}: {result.get('message')}")
+            else:
+                logger.error(f"Async attendance API FAILED for {display_name}: {result.get('message')}")
 
-        api_status = api_response.get('status', 'success')
-        api_message = api_response.get('message', '').replace('User', recognized_user.get_display_name(), 1)
+        threading.Thread(target=_post_attendance, daemon=True).start()
 
-        logger.info(f"API response — status: {api_status}, message: {api_message}")
-
+        action_label = 'Checked In' if action == 'check_in' else 'Checked Out'
         return JsonResponse({
             'success': True,
-            'status': api_status,
-            'message': api_message,
+            'status': 'success',
+            'message': f'{display_name} {action_label} successfully',
             'user': {
                 'username': recognized_user.username,
-                'display_name': recognized_user.get_display_name(),
-                'api_id': recognized_user.api_user_id
+                'display_name': display_name,
+                'api_id': api_uid
             },
             'action': action,
             'confidence': f"{confidence:.2f}%",
             'distance': f"{distance:.4f}"
         })
 
-    except CustomUser.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'User data error'})
     except Exception as e:
         logger.error(f"Error in face recognition: {str(e)}")
         import traceback

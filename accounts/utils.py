@@ -6,13 +6,14 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def compute_face_embedding(image_path, model_name="SFace"):
+def compute_face_embedding(image_input, model_name="SFace", fast_mode=False):
     """
     Compute face embedding for a given image using DeepFace.
 
     Args:
-        image_path: Absolute path to the face image
+        image_input: Absolute path (str) OR decoded numpy array (np.ndarray)
         model_name: DeepFace model to use (default: SFace)
+        fast_mode: If True, skip MTCNN and use OpenCV only (faster for live recognition)
 
     Returns:
         list: 512D embedding vector as list, or None if failed
@@ -20,13 +21,14 @@ def compute_face_embedding(image_path, model_name="SFace"):
     try:
         from deepface import DeepFace
 
-        # Try MTCNN first (best alignment quality).
-        # Fall back to opencv if MTCNN misses the face — opencv is more lenient
-        # and catches faces that MTCNN rejects at slight angles or in dim lighting.
-        for backend in ("mtcnn", "opencv"):
+        # fast_mode skips MTCNN (slow) — used for live recognition where speed matters.
+        # Enrollment still uses MTCNN-first for better alignment quality.
+        backends = ("opencv",) if fast_mode else ("mtcnn", "opencv")
+
+        for backend in backends:
             try:
                 result = DeepFace.represent(
-                    img_path=image_path,
+                    img_path=image_input,
                     model_name=model_name,
                     detector_backend=backend,
                     enforce_detection=True
@@ -36,11 +38,12 @@ def compute_face_embedding(image_path, model_name="SFace"):
             except ValueError:
                 continue  # No face found with this backend — try next
 
-        logger.warning(f"No face detected in {image_path}")
+        label = "image" if isinstance(image_input, str) else "frame"
+        logger.warning(f"No face detected in {label}")
         return None
 
     except Exception as e:
-        logger.error(f"Error computing embedding for {image_path}: {str(e)}")
+        logger.error(f"Error computing embedding: {str(e)}")
         return None
 
 
