@@ -365,22 +365,24 @@ def recognize_and_mark_attendance(request):
         if img is None:
             return JsonResponse({'success': False, 'error': 'Failed to decode image'})
 
+        # Load cache first (in-memory, instant after first hit) so we have names for all log lines
+        user_embeddings, user_map, user_obj_map = _get_embedding_cache()
+        selected_name = user_map.get(int(selected_user_id), f"ID:{selected_user_id}")
+
+        logger.info(f"FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"Action: {action.upper()} | Selected: {selected_name} (ID: {selected_user_id})")
+
         # Pass numpy array directly — no temp file needed
         query_embedding = compute_face_embedding(img, model_name="SFace", fast_mode=True)
 
         if query_embedding is None:
+            logger.warning(f"No face detected for selected user: {selected_name} (ID: {selected_user_id})")
             return JsonResponse({
                 'success': False,
                 'error': 'Could not detect face in the image. Please try again with better lighting.'
             })
 
-        user_embeddings, user_map, user_obj_map = _get_embedding_cache()
-
         DISTANCE_THRESHOLD = 0.40
-
-        logger.info(f"FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        logger.info(f"Action: {action.upper()}")
-        logger.info(f"Selected user ID: {selected_user_id}")
 
         user_id, distance, confidence, log_match = find_best_match(
             query_embedding,

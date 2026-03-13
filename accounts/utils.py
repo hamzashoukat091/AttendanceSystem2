@@ -146,16 +146,11 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
                 f"{rank:<6} {match['username']:<20} {match['display_name']:<25} "
                 f"{match['distance']:<10.4f} {match['confidence']:>6.2f}%     {passed}"
             )
-        logger.info("="*80)
         if best_distance <= threshold:
-            logger.info(f"  [MATCH FOUND]")
-            logger.info(f"  User: {all_matches[0]['display_name']} ({all_matches[0]['username']})")
-            logger.info(f"  Distance: {best_distance:.4f} (threshold: {threshold})")
-            logger.info(f"  Confidence: {(1.0 - best_distance) * 100:.2f}%")
+            logger.info(f"  [MATCH FOUND] {all_matches[0]['display_name']} | Distance: {best_distance:.4f} | Confidence: {(1.0 - best_distance) * 100:.2f}%")
         else:
-            logger.info(f"  [NO MATCH] - Best distance {best_distance:.4f} exceeds threshold {threshold}")
-            if all_matches:
-                logger.info(f"  Closest was: {all_matches[0]['display_name']} with {all_matches[0]['confidence']:.2f}% confidence")
+            closest = f" | Closest: {all_matches[0]['display_name']} ({all_matches[0]['confidence']:.2f}%)" if all_matches else ""
+            logger.info(f"  [NO MATCH] Best distance {best_distance:.4f} exceeds threshold {threshold}{closest}")
         logger.info("="*80)
 
     if best_distance <= threshold:
