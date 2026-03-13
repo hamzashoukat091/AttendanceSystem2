@@ -588,7 +588,8 @@
         .ns-grid::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 99px; }
         .ns-user-card {
             position: relative;
-            border: 2px solid transparent;
+            background: white;
+            border: 2px solid #e2e8f0;
             border-radius: 20px;
             padding: 22px 14px 18px;
             text-align: center;
@@ -921,61 +922,17 @@
             }
         }
 
-        // Interleaved across 8 hue groups: pink→green→blue→orange→purple→cyan→red→yellow
-        // so consecutive user IDs always get visually distant colors
-        const CARD_PALETTE = [
-            { bg: '#fce7f3', border: '#f9a8d4', avatar: '#ec4899', text: '#831843' },  // 0  pink
-            { bg: '#dcfce7', border: '#86efac', avatar: '#16a34a', text: '#14532d' },  // 1  green
-            { bg: '#e0f2fe', border: '#7dd3fc', avatar: '#0284c7', text: '#0c4a6e' },  // 2  sky
-            { bg: '#ffedd5', border: '#fdba74', avatar: '#ea580c', text: '#7c2d12' },  // 3  orange
-            { bg: '#ede9fe', border: '#c4b5fd', avatar: '#7c3aed', text: '#3b0764' },  // 4  violet
-            { bg: '#cffafe', border: '#67e8f9', avatar: '#0891b2', text: '#164e63' },  // 5  cyan
-            { bg: '#fee2e2', border: '#fca5a5', avatar: '#dc2626', text: '#7f1d1d' },  // 6  red
-            { bg: '#fef3c7', border: '#fcd34d', avatar: '#d97706', text: '#78350f' },  // 7  amber
-            { bg: '#fdf4ff', border: '#f0abfc', avatar: '#c026d3', text: '#701a75' },  // 8  fuchsia
-            { bg: '#d1fae5', border: '#6ee7b7', avatar: '#059669', text: '#064e3b' },  // 9  emerald
-            { bg: '#eff6ff', border: '#93c5fd', avatar: '#3b82f6', text: '#1e3a8a' },  // 10 blue
-            { bg: '#fff3e0', border: '#ffcc80', avatar: '#e65100', text: '#bf360c' },  // 11 deep orange
-            { bg: '#f3e8ff', border: '#d8b4fe', avatar: '#9333ea', text: '#581c87' },  // 12 purple
-            { bg: '#ecfeff', border: '#a5f3fc', avatar: '#06b6d4', text: '#083344' },  // 13 light cyan
-            { bg: '#fff1f2', border: '#fda4af', avatar: '#e11d48', text: '#881337' },  // 14 rose
-            { bg: '#fefce8', border: '#fde68a', avatar: '#eab308', text: '#713f12' },  // 15 yellow
-            { bg: '#fff0f8', border: '#e8a0c8', avatar: '#b5388a', text: '#6b1050' },  // 16 mauve
-            { bg: '#ecfdf5', border: '#6ee7b7', avatar: '#10b981', text: '#065f46' },  // 17 teal-green
-            { bg: '#f0f9ff', border: '#bae6fd', avatar: '#0369a1', text: '#082f49' },  // 18 deep sky
-            { bg: '#fff8e1', border: '#ffe082', avatar: '#ff8f00', text: '#e65100' },  // 19 warm amber
-            { bg: '#e8eaf6', border: '#9fa8da', avatar: '#283593', text: '#1a237e' },  // 20 indigo
-            { bg: '#e0f7fa', border: '#80deea', avatar: '#00838f', text: '#006064' },  // 21 teal
-            { bg: '#fce4ec', border: '#f48fb1', avatar: '#c2185b', text: '#880e4f' },  // 22 deep pink
-            { bg: '#f7fee7', border: '#bef264', avatar: '#65a30d', text: '#365314' },  // 23 lime
-            { bg: '#f8eef8', border: '#d898d8', avatar: '#882888', text: '#500050' },  // 24 plum
-            { bg: '#e8f5e9', border: '#a5d6a7', avatar: '#2e7d32', text: '#1b5e20' },  // 25 deep green
-            { bg: '#e3f2fd', border: '#90caf9', avatar: '#1565c0', text: '#0d47a1' },  // 26 deep blue
-            { bg: '#fdf6ec', border: '#f5c87a', avatar: '#c87941', text: '#7a3e0a' },  // 27 caramel
-            { bg: '#f3e5f5', border: '#ce93d8', avatar: '#7b1fa2', text: '#4a148c' },  // 28 deep purple
-            { bg: '#eef8f8', border: '#98d8d8', avatar: '#288888', text: '#085050' },  // 29 sea green
-            { bg: '#fbe9e7', border: '#ffab91', avatar: '#bf360c', text: '#8d1f00' },  // 30 burnt orange
-            { bg: '#fef9c3', border: '#fef08a', avatar: '#ca8a04', text: '#713f12' },  // 31 warm yellow
-            { bg: '#f8e8f0', border: '#d888b8', avatar: '#883868', text: '#500838' },  // 32 dusty rose
-            { bg: '#f2ffe9', border: '#a8d8a8', avatar: '#3a8c3a', text: '#1a4d1a' },  // 33 sage
-            { bg: '#e1f5fe', border: '#81d4fa', avatar: '#01579b', text: '#002f6c' },  // 34 light blue
-            { bg: '#fff4e8', border: '#f8c898', avatar: '#d87828', text: '#884800' },  // 35 peach
-            { bg: '#ede7f6', border: '#b39ddb', avatar: '#512da8', text: '#311b92' },  // 36 deep violet
-            { bg: '#e8f8f0', border: '#88d8a8', avatar: '#287848', text: '#084828' },  // 37 mint
-            { bg: '#e8f0fe', border: '#a8c0f8', avatar: '#3a60c8', text: '#1a3080' },  // 38 cornflower
-            { bg: '#f8f0e8', border: '#d8b888', avatar: '#886828', text: '#503800' },  // 39 warm tan
-            { bg: '#f0e8f8', border: '#b888d8', avatar: '#683898', text: '#380858' },  // 40 soft violet
-            { bg: '#eef8ee', border: '#88d888', avatar: '#287828', text: '#083808' },  // 41 soft green
-            { bg: '#e6f3fb', border: '#90bdd9', avatar: '#1a6e9e', text: '#0a3a5c' },  // 42 steel blue
-            { bg: '#f8eee8', border: '#d8a888', avatar: '#885828', text: '#502800' },  // 43 warm sand
-            { bg: '#eeeef8', border: '#9898d8', avatar: '#383898', text: '#080858' },  // 44 soft indigo
-            { bg: '#f0fdf4', border: '#bbf7d0', avatar: '#22c55e', text: '#14532d' },  // 45 lime green
-            { bg: '#efebe9', border: '#bcaaa4', avatar: '#5d4037', text: '#3e2723' },  // 46 brown
-            { bg: '#f9fbe7', border: '#e6ee9c', avatar: '#9e9d24', text: '#827717' },  // 47 yellow-green
-            { bg: '#f0f8e8', border: '#b8d898', avatar: '#4a8c2a', text: '#2a5010' },  // 48 olive
-            { bg: '#e8f8f8', border: '#88c8d8', avatar: '#286888', text: '#083848' },  // 49 soft teal
-            { bg: '#f8f8e8', border: '#d8d888', avatar: '#888828', text: '#505008' },  // 50 khaki
-            { bg: '#f0f8f0', border: '#98d898', avatar: '#387838', text: '#084808' },  // 51 forest
+        const AVATAR_COLORS = [
+            '#ec4899','#0284c7','#16a34a','#d97706','#9333ea',
+            '#ea580c','#0891b2','#059669','#7c3aed','#dc2626',
+            '#c026d3','#10b981','#3b82f6','#65a30d','#eab308',
+            '#0369a1','#e11d48','#06b6d4','#ca8a04','#283593',
+            '#00838f','#c2185b','#2e7d32','#1565c0','#7b1fa2',
+            '#b5388a','#01579b','#ff8f00','#512da8','#288888',
+            '#bf360c','#9e9d24','#c87941','#1a6e9e','#3a8c3a',
+            '#d87828','#5d4037','#883868','#4a8c2a','#3a60c8',
+            '#682898','#287848','#886828','#383898','#22c55e',
+            '#885828','#286888','#287828','#888828','#387838',
         ];
 
         function renderNameGrid(users) {
@@ -987,11 +944,9 @@
             grid.innerHTML = users.map(u => {
                 const safeName = u.display_name.replace(/'/g, "\\'");
                 const initials = u.display_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
-                const c = CARD_PALETTE[u.api_user_id % CARD_PALETTE.length];
-                return `<button class="ns-user-card" onclick="selectNameCard(this,${u.api_user_id},'${safeName}')"
-                    style="background:${c.bg};border-color:${c.border};color:${c.text};"
-                    data-avatar="${c.avatar}" data-border="${c.border}">
-                    <div class="ns-avatar" style="background:${c.avatar};">${initials}</div>
+                const avatarColor = AVATAR_COLORS[u.api_user_id % AVATAR_COLORS.length];
+                return `<button class="ns-user-card" onclick="selectNameCard(this,${u.api_user_id},'${safeName}')">
+                    <div class="ns-avatar" style="background:${avatarColor};">${initials}</div>
                     <span class="ns-name">${u.display_name}</span>
                 </button>`;
             }).join('');
@@ -999,8 +954,6 @@
 
         function selectNameCard(el, userId, userName) {
             el.classList.add('selected');
-            const borderColor = el.dataset.border || 'rgba(0,0,0,0.2)';
-            el.style.boxShadow = `0 0 0 3px ${borderColor}, 0 8px 24px rgba(0,0,0,0.14)`;
             selectedUserId = userId;
             selectedUserName = userName;
             setTimeout(() => {
