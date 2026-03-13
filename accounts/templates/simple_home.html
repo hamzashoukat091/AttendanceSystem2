@@ -943,7 +943,7 @@
             }
             grid.innerHTML = users.map(u => {
                 const safeName = u.display_name.replace(/'/g, "\\'");
-                const initials = u.display_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+                const initials = u.display_name.trim()[0].toUpperCase();
                 const avatarColor = AVATAR_COLORS[u.api_user_id % AVATAR_COLORS.length];
                 return `<button class="ns-user-card" onclick="selectNameCard(this,${u.api_user_id},'${safeName}')">
                     <div class="ns-avatar" style="background:${avatarColor};">${initials}</div>
