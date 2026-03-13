@@ -381,7 +381,7 @@ def recognize_and_mark_attendance(request):
                 'error': 'Could not detect face in the image. Please try again with better lighting.'
             })
 
-        DISTANCE_THRESHOLD = 0.40
+        DISTANCE_THRESHOLD = 0.45
 
         user_id, distance, confidence, log_match = find_best_match(
             query_embedding,

@@ -1198,9 +1198,10 @@
                     closeScanner();
                     showMainPageMessage(displayName, result.message, apiStatus === 'warning' ? 'warning' : 'success');
                 } else {
+                    const isMismatch = result.error && result.error.includes('does not match');
                     retryCount++;
-                    if (retryCount <= 1) {
-                        // Silent retry — reset quickly so the loop captures a fresh frame
+                    if (!isMismatch && retryCount <= 4) {
+                        // Silent retry — up to 5 total attempts before showing error
                         showScannerMessage('🔄 Retrying...', 'processing');
                         setTimeout(() => { scannerProcessing = false; }, 400);
                     } else {
