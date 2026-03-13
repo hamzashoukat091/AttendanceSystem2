@@ -922,18 +922,34 @@
             }
         }
 
-        const AVATAR_COLORS = [
-            '#ec4899','#0284c7','#16a34a','#d97706','#9333ea',
-            '#ea580c','#0891b2','#059669','#7c3aed','#dc2626',
-            '#c026d3','#10b981','#3b82f6','#65a30d','#eab308',
-            '#0369a1','#e11d48','#06b6d4','#ca8a04','#283593',
-            '#00838f','#c2185b','#2e7d32','#1565c0','#7b1fa2',
-            '#b5388a','#01579b','#ff8f00','#512da8','#288888',
-            '#bf360c','#9e9d24','#c87941','#1a6e9e','#3a8c3a',
-            '#d87828','#5d4037','#883868','#4a8c2a','#3a60c8',
-            '#682898','#287848','#886828','#383898','#22c55e',
-            '#885828','#286888','#287828','#888828','#387838',
-        ];
+        const ALPHA_COLORS = {
+            A: '#673AB7', // vivid medium purple   (≠ E dark grape, ≠ N vivid violet, ≠ X near-black violet)
+            B: '#0D47A1', // deep navy
+            C: '#2E7D32', // forest green
+            D: '#5D4037', // warm medium brown
+            E: '#6A1B9A', // deep purple
+            F: '#006064', // very dark teal
+            G: '#AD1457', // dark rose            (pink, not red)
+            H: '#C62828', // vivid red
+            I: '#0288D1', // vivid sky-cerulean   (lighter than B navy)
+            J: '#558B2F', // olive green          (yellow-green, ≠ C forest)
+            K: '#880E4F', // dark maroon          (purple-red, ≠ G rose, ≠ A red)
+            L: '#00838F', // vivid teal           (lighter/brighter than F)
+            M: '#283593', // deep cobalt-indigo   (blue-purple, between B and E)
+            N: '#9C27B0', // vivid violet         (purple-magenta, ≠ E dark)
+            O: '#4E342E', // dark espresso        (cool near-black brown)
+            P: '#E91E63', // vivid fuchsia        (pink, ≠ G and K by brightness)
+            Q: '#1B5E20', // very dark forest     (much darker than C)
+            R: '#E65100', // vivid orange
+            S: '#212121', // near-black
+            T: '#388E3C', // vivid medium green    (≠ C forest, ≠ J olive, ≠ Q dark forest)
+            U: '#7A6000', // dark golden-yellow
+            V: '#004D40', // very dark forest-teal(deep green-teal, ≠ F blue-teal)
+            W: '#795548', // medium warm brown    (lighter/warmer than O and R)
+            X: '#311B92', // very deep blue-violet(almost indigo-black, ≠ E, ≠ M)
+            Y: '#F57C00', // vivid amber-orange   (pure amber, ≠ D red-orange)
+            Z: '#1565C0', // royal blue             (vivid saturated blue, ≠ U muted slate, ≠ B dark navy)
+        };
 
         function renderNameGrid(users) {
             const grid = document.getElementById('nsGrid');
@@ -944,7 +960,7 @@
             grid.innerHTML = users.map(u => {
                 const safeName = u.display_name.replace(/'/g, "\\'");
                 const initials = u.display_name.trim()[0].toUpperCase();
-                const avatarColor = AVATAR_COLORS[u.api_user_id % AVATAR_COLORS.length];
+                const avatarColor = ALPHA_COLORS[initials] || '#607d8b';
                 return `<button class="ns-user-card" onclick="selectNameCard(this,${u.api_user_id},'${safeName}')">
                     <div class="ns-avatar" style="background:${avatarColor};">${initials}</div>
                     <span class="ns-name">${u.display_name}</span>
