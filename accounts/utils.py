@@ -38,8 +38,6 @@ def compute_face_embedding(image_input, model_name="SFace", fast_mode=False):
             except ValueError:
                 continue  # No face found with this backend — try next
 
-        label = "image" if isinstance(image_input, str) else "frame"
-        logger.warning(f"No face detected in {label}")
         return None
 
     except Exception as e:

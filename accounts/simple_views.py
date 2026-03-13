@@ -369,8 +369,7 @@ def recognize_and_mark_attendance(request):
         user_embeddings, user_map, user_obj_map = _get_embedding_cache()
         selected_name = user_map.get(int(selected_user_id), f"ID:{selected_user_id}")
 
-        logger.info(f"FACE RECOGNITION REQUEST - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        logger.info(f"Action: {action.upper()} | Selected: {selected_name} (ID: {selected_user_id})")
+        logger.info(f"→ {action.upper()} | {selected_name} (ID: {selected_user_id}) | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
         # Pass numpy array directly — no temp file needed
         query_embedding = compute_face_embedding(img, model_name="SFace", fast_mode=True)
@@ -393,7 +392,6 @@ def recognize_and_mark_attendance(request):
 
         if user_id is None:
             log_match()
-            logger.warning("RECOGNITION FAILED - No matching face found above threshold")
             return JsonResponse({
                 'success': False,
                 'error': 'Face not recognized. Please try again with better lighting.'
