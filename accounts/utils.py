@@ -23,7 +23,7 @@ def compute_face_embedding(image_input, model_name="SFace", fast_mode=False):
 
         # fast_mode skips MTCNN (slow) — used for live recognition where speed matters.
         # Enrollment still uses MTCNN-first for better alignment quality.
-        backends = ("opencv", "ssd") if fast_mode else ("mtcnn", "opencv")
+        backends = ("opencv", "ssd", "mtcnn") if fast_mode else ("mtcnn", "opencv")
 
         for backend in backends:
             try:
