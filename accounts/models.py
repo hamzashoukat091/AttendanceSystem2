@@ -51,3 +51,34 @@ class UserFaceEmbedding(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - Embedding {self.id}"
+
+
+class PendingAttendanceSync(models.Model):
+    """
+    Queue of attendance records that failed to post to the remote API.
+    A background worker retries these periodically until success or max retries.
+    """
+    STATUS_PENDING   = 'pending'
+    STATUS_ABANDONED = 'abandoned'
+    STATUS_CHOICES   = [(STATUS_PENDING, 'Pending'), (STATUS_ABANDONED, 'Abandoned')]
+
+    user_id         = models.IntegerField()
+    attendance_type = models.CharField(max_length=20)       # 'check_in' or 'check_out'
+    scheduled_time  = models.DateTimeField()                # when the original event occurred
+    retry_count     = models.IntegerField(default=0)
+    status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, db_index=True)
+    last_error      = models.TextField(blank=True, default='')
+    created_at      = models.DateTimeField(auto_now_add=True)
+    last_attempted  = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user_id', 'attendance_type', 'scheduled_time'],
+                name='unique_pending_sync_event'
+            )
+        ]
+
+    def __str__(self):
+        return f"PendingSync user={self.user_id} type={self.attendance_type} retries={self.retry_count}"

@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
 
-from .models import CustomUser, UserFaceEmbedding
+from .models import CustomUser, UserFaceEmbedding, PendingAttendanceSync
 
 
 # ---------------------------
@@ -203,3 +203,17 @@ class UserFaceEmbeddingAdmin(admin.ModelAdmin):
 
 admin.site.register(UserFaceEmbedding, UserFaceEmbeddingAdmin)
 
+
+# ---------------------------
+# PendingAttendanceSync Admin
+# ---------------------------
+@admin.register(PendingAttendanceSync)
+class PendingAttendanceSyncAdmin(admin.ModelAdmin):
+    list_display  = ['id', 'user_id', 'attendance_type', 'scheduled_time', 'retry_count', 'status', 'last_error', 'created_at']
+    list_filter   = ['status', 'attendance_type']
+    search_fields = ['user_id', 'last_error']
+    ordering      = ['-created_at']
+    readonly_fields = ['created_at', 'last_attempted']
+
+    def has_add_permission(self, request):
+        return False

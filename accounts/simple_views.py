@@ -455,11 +455,36 @@ def recognize_and_mark_attendance(request):
         api_fn = check_in_user if action == 'check_in' else check_out_user
 
         def _post_attendance():
-            result = api_fn(api_uid)
-            if result['success']:
-                logger.info(f"Async attendance API OK for {display_name}: {result.get('message')}")
-            else:
-                logger.error(f"Async attendance API FAILED for {display_name}: {result.get('message')}")
+            import time as _time_mod
+            IMMEDIATE_RETRIES = 5
+            RETRY_DELAYS = [5, 10, 20, 30, 60]  # seconds between attempts
+
+            result = None
+            for attempt in range(1, IMMEDIATE_RETRIES + 1):
+                result = api_fn(api_uid)
+                if result['success']:
+                    logger.info(f"Async attendance API OK for {display_name} (attempt {attempt}): {result.get('message')}")
+                    return
+                logger.warning(
+                    f"Async attendance attempt {attempt}/{IMMEDIATE_RETRIES} FAILED for {display_name}: {result.get('message')}"
+                )
+                if attempt < IMMEDIATE_RETRIES:
+                    _time_mod.sleep(RETRY_DELAYS[attempt - 1])
+
+            # All immediate retries exhausted — enqueue for long-term retry worker
+            logger.error(f"All {IMMEDIATE_RETRIES} immediate attempts failed for {display_name} ({action}). Queuing for background retry.")
+            try:
+                from django.utils import timezone as dj_tz
+                from .models import PendingAttendanceSync
+                PendingAttendanceSync.objects.create(
+                    user_id=api_uid,
+                    attendance_type=action,
+                    scheduled_time=dj_tz.now(),
+                    last_error=(result.get('message', '') if result else 'Unknown')[:500],
+                )
+                logger.info(f"Queued retry for {display_name} ({action})")
+            except Exception as enqueue_err:
+                logger.error(f"CRITICAL: Failed to enqueue retry for {display_name}: {enqueue_err}")
 
         threading.Thread(target=_post_attendance, daemon=True).start()
 

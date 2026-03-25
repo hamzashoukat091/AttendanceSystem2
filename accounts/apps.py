@@ -11,6 +11,21 @@ class AccountsConfig(AppConfig):
     def ready(self):
         import accounts.signal
         self._warmup_deepface()
+        self._start_retry_worker()
+
+    def _start_retry_worker(self):
+        """Start the attendance API retry worker in a background thread at app startup."""
+        import threading
+
+        def _launch():
+            try:
+                from accounts.retry_worker import start_retry_worker
+                start_retry_worker()
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to start retry worker: {e}")
+
+        threading.Thread(target=_launch, daemon=True, name="retry-worker-launcher").start()
 
     def _warmup_deepface(self):
         """
