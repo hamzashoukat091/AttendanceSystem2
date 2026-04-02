@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import sys
 import logging
+import datetime
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +31,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.6', '192.168.*', '*']
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
-    'http://192.168.*:8000',
+    'http://192.168.1.6:8000',
 ]
 
 SECRET_KEY = os.environ.get('SECRET_KEY', '97665b4de43d2bab61ba698612f18347')
@@ -40,13 +41,6 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 # LOGIN_REDIRECT_URL = "userdash"
 # LOGOUT_REDIRECT_URL = "accounts/login"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-SECRET_KEY = 'django-insecure-n6p6cpn-(j5r_beb-019^^1zbeo4v8&nyuk21we*3e#=2buyq8'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 # Application definition
 
@@ -164,7 +158,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-print(BASE_DIR)
+os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 
 # Logging Configuration for Face Recognition
 LOGGING = {
@@ -191,6 +185,7 @@ LOGGING = {
             'class': 'accounts.logging_handlers.WindowsSafeTimedRotatingFileHandler',
             'filename': BASE_DIR / 'logs' / 'face_recognition.log',
             'when': 'midnight',
+            'atTime': datetime.time(8, 0),
             'backupCount': 30,
             'encoding': 'utf-8',
             'formatter': 'detailed',

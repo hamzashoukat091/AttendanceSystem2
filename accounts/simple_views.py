@@ -42,29 +42,36 @@ def _invalidate_embedding_cache():
 
 def _get_embedding_cache():
     global _embedding_cache, _user_map_cache, _user_obj_cache
+
+    # Fast path: no lock needed for a read if already built
     with _cache_lock:
         if _embedding_cache is not None:
             return _embedding_cache, _user_map_cache, _user_obj_cache
 
-        user_embeddings = {}
-        user_map = {}
-        user_obj_map = {}
-        users_with_faces = CustomUser.objects.filter(
-            has_face_data=True, api_user_id__isnull=False
-        ).prefetch_related('face_embeddings')
+    # Slow path: rebuild outside the lock so other threads aren't blocked
+    # during what can be a multi-second DB query.
+    user_embeddings = {}
+    user_map = {}
+    user_obj_map = {}
+    users_with_faces = CustomUser.objects.filter(
+        has_face_data=True, api_user_id__isnull=False
+    ).prefetch_related('face_embeddings')
 
-        for user in users_with_faces:
-            embeddings = [e.embedding for e in user.face_embeddings.all()]
-            if embeddings:
-                avg_embedding = np.mean(embeddings, axis=0).tolist()
-                user_embeddings[user.api_user_id] = [avg_embedding]
-                user_map[user.api_user_id] = user.get_display_name()
-                user_obj_map[user.api_user_id] = user
+    for user in users_with_faces:
+        embeddings = [e.embedding for e in user.face_embeddings.all()]
+        if embeddings:
+            avg_embedding = np.mean(embeddings, axis=0).tolist()
+            user_embeddings[user.api_user_id] = [avg_embedding]
+            user_map[user.api_user_id] = user.get_display_name()
+            user_obj_map[user.api_user_id] = user
 
-        _embedding_cache = user_embeddings
-        _user_map_cache = user_map
-        _user_obj_cache = user_obj_map
-        logger.info(f"Embedding cache built: {len(user_embeddings)} users")
+    # Re-acquire lock to assign — only write if another thread hasn't beaten us to it
+    with _cache_lock:
+        if _embedding_cache is None:
+            _embedding_cache = user_embeddings
+            _user_map_cache = user_map
+            _user_obj_cache = user_obj_map
+            logger.info(f"Embedding cache built: {len(user_embeddings)} users")
         return _embedding_cache, _user_map_cache, _user_obj_cache
 
 
@@ -116,11 +123,17 @@ def _save_daily_records():
     """Persist current in-memory records to disk. Must be called under _daily_records_lock."""
     today = _attendance_day()
     filepath = _attendance_filepath(today)
+    tmp = filepath + '.tmp'
     try:
-        with open(filepath, 'w') as f:
+        with open(tmp, 'w') as f:
             json.dump({'day': str(today), 'records': _daily_records}, f, indent=2)
+        os.replace(tmp, filepath)
     except Exception as e:
         logger.error(f"Failed to write daily attendance file: {e}")
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
 
 
 def decode_base64_image(base64_string):
