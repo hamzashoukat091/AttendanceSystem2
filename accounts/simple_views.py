@@ -457,6 +457,15 @@ def recognize_and_mark_attendance(request):
                     'distance': f"{distance:.4f}"
                 })
 
+            # Block check-out if the user has not checked in yet today
+            if action == 'check_out' and 'check_in' not in user_record:
+                logger.warning(f"CHECK-OUT BLOCKED — {display_name} (id={api_uid}) has no check-in for today")
+                return JsonResponse({
+                    'success': False,
+                    'status': 'not_checked_in',
+                    'error': 'Not checked in yet. Please check in first.'
+                })
+
             # Record the attendance locally before returning
             now_str = datetime.now().strftime('%I:%M %p')
             if uid_str not in _daily_records:

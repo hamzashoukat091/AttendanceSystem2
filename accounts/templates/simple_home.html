@@ -808,10 +808,15 @@
 
             if (hasNotification) {
                 actionText = action === 'check_in' ? 'Checked In' : 'Checked Out';
-                
+
+                // Cancel any in-flight fade and reset visibility before showing new message
+                if (_msgFadeTimer) { clearTimeout(_msgFadeTimer); _msgFadeTimer = null; }
+                messageContainer.style.transition = '';
+                messageContainer.style.opacity = '1';
+
                 if (alreadyDone) {
                     messageContainer.innerHTML = `
-                        <div class="message info" style="background: #d1ecf1; color: #0c5460; border-left: 5px solid #17a2b8;">
+                        <div class="message info" style="background: #fff3cd; color: #856404; border-left: 5px solid #ffc107;">
                             <span>ℹ️</span>
                             <span><strong>${user}</strong> is already <strong>${actionText}</strong></span>
                         </div>
@@ -824,22 +829,23 @@
                         </div>
                     `;
                 }
-                
+
                 // Hide after 5 seconds
-                setTimeout(() => {
+                _msgFadeTimer = setTimeout(() => {
                     messageContainer.style.transition = 'opacity 0.5s';
                     messageContainer.style.opacity = '0';
-                    setTimeout(() => {
+                    _msgFadeTimer = setTimeout(() => {
                         messageContainer.innerHTML = '';
+                        messageContainer.style.transition = '';
                         messageContainer.style.opacity = '1';
+                        _msgFadeTimer = null;
                     }, 500);
                 }, 5000);
             }
         }
 
-        // Listen for both load and pageshow (for back button cache)
+        // pageshow fires on both normal loads and bfcache restores (back button)
         window.addEventListener('pageshow', showNotification);
-        document.addEventListener('DOMContentLoaded', showNotification);
 
         // --- Camera & model pre-start state ---
         let cameraStream = null;
@@ -978,23 +984,37 @@
             }, 150);
         }
 
+        // Shared timer for message fade-out — cancels any previous fade before showing a new message
+        let _msgFadeTimer = null;
+
         function showMainPageMessage(userName, text, type) {
             const mc = document.getElementById('messageContainer');
             const styles = {
                 success: { bg: '#d4edda', color: '#155724', border: '#28a745', icon: '✓' },
-                warning: { bg: '#d1ecf1', color: '#0c5460', border: '#17a2b8', icon: 'ℹ️' },
+                warning: { bg: '#fff3cd', color: '#856404', border: '#ffc107', icon: 'ℹ️' },
                 error:   { bg: '#f8d7da', color: '#721c24', border: '#dc3545', icon: '✗' },
             };
             const s = styles[type] || styles.success;
+
+            // Cancel any in-flight fade and reset visibility before showing new message
+            if (_msgFadeTimer) { clearTimeout(_msgFadeTimer); _msgFadeTimer = null; }
+            mc.style.transition = '';
+            mc.style.opacity = '1';
+
             mc.innerHTML = `
                 <div class="message" style="background:${s.bg};color:${s.color};border-left:5px solid ${s.border};display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:12px;">
                     <span style="font-size:1.1rem;">${s.icon}</span>
                     <span style="font-size:0.95rem;">${text}</span>
                 </div>`;
-            setTimeout(() => {
+            _msgFadeTimer = setTimeout(() => {
                 mc.style.transition = 'opacity 0.5s';
                 mc.style.opacity = '0';
-                setTimeout(() => { mc.innerHTML = ''; mc.style.opacity = '1'; }, 500);
+                _msgFadeTimer = setTimeout(() => {
+                    mc.innerHTML = '';
+                    mc.style.transition = '';
+                    mc.style.opacity = '1';
+                    _msgFadeTimer = null;
+                }, 500);
             }, 5000);
         }
 
