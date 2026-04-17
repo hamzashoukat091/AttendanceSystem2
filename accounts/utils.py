@@ -134,11 +134,11 @@ def find_best_match(query_embedding, user_embeddings, threshold=0.33, user_map=N
 
     # Build a deferred log function so the caller can log AFTER checking "already done"
     def log_results():
-        logger.info("TOP 5 MATCHING RESULTS:")
+        logger.info("TOP 2 MATCHING RESULTS:")
         logger.info("-" * 85)
         logger.info(f"{'Rank':<6} {'Username':<20} {'Display Name':<25} {'Distance':<10} {'Confidence':<12} {'Pass'}")
         logger.info("-" * 85)
-        for rank, match in enumerate(all_matches[:5], 1):
+        for rank, match in enumerate(all_matches[:2], 1):
             passed = "[PASS]" if match['distance'] <= threshold else "[FAIL]"
             logger.info(
                 f"{rank:<6} {match['username']:<20} {match['display_name']:<25} "
