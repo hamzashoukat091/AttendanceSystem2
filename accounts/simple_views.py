@@ -169,6 +169,14 @@ def api_users(request):
     ]})
 
 
+def attendance_status(request):
+    """Return today's attendance ledger so the UI can disable already-checked-in users."""
+    with _daily_records_lock:
+        _ensure_daily_records()
+        records_snapshot = dict(_daily_records)
+    return JsonResponse({'records': records_snapshot})
+
+
 def select_user_for_registration(request):
     """Select user for face registration from dropdown"""
     # Get all users with API IDs

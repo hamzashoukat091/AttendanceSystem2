@@ -681,6 +681,34 @@
             grid-column: 1 / -1;
         }
         .smsg.warning { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
+
+        /* Already checked-in card — greyed out, no interaction */
+        .ns-user-card.checked-in {
+            opacity: 0.55;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            box-shadow: none;
+        }
+        .ns-user-card.checked-in:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        .ns-checked-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #065F46;
+            background: #D1FAE5;
+            border: 1px solid #6EE7B7;
+            border-radius: 99px;
+            padding: 2px 8px;
+            margin-top: 2px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -916,13 +944,26 @@
 
         async function populateNameGrid() {
             const grid = document.getElementById('nsGrid');
-            if (usersCache) { renderNameGrid(usersCache); return; }
+
+            // Always fetch fresh attendance status (never cache — changes throughout the day)
+            let statusMap = {};
+            if (currentAction === 'check_in') {
+                try {
+                    const statusResp = await fetch('{% url "attendance_status" %}');
+                    const statusData = await statusResp.json();
+                    statusMap = statusData.records || {};
+                } catch (e) {
+                    console.warn('Could not fetch attendance status:', e);
+                }
+            }
+
+            if (usersCache) { renderNameGrid(usersCache, statusMap); return; }
             grid.innerHTML = '<div class="ns-loading">⏳ Loading users...</div>';
             try {
                 const resp = await fetch('{% url "api_users" %}');
                 const data = await resp.json();
                 usersCache = data.users || [];
-                renderNameGrid(usersCache);
+                renderNameGrid(usersCache, statusMap);
             } catch (err) {
                 grid.innerHTML = '<div class="ns-loading" style="color:#EF4444;">Failed to load users. Please refresh.</div>';
             }
@@ -957,7 +998,7 @@
             Z: '#1565C0', // royal blue             (vivid saturated blue, ≠ U muted slate, ≠ B dark navy)
         };
 
-        function renderNameGrid(users) {
+        function renderNameGrid(users, statusMap = {}) {
             const grid = document.getElementById('nsGrid');
             if (!users || users.length === 0) {
                 grid.innerHTML = '<div class="ns-loading">No registered users found.</div>';
@@ -967,6 +1008,19 @@
                 const safeName = u.display_name.replace(/'/g, "\\'");
                 const initials = u.display_name.trim()[0].toUpperCase();
                 const avatarColor = ALPHA_COLORS[initials] || '#607d8b';
+
+                // Disable card if this user already checked in today (check-in action only)
+                const userRecord = statusMap[String(u.api_user_id)] || {};
+                const alreadyCheckedIn = currentAction === 'check_in' && userRecord.check_in;
+
+                if (alreadyCheckedIn) {
+                    return `<button class="ns-user-card checked-in" onclick="return false;" aria-disabled="true">
+                        <div class="ns-avatar" style="background:${avatarColor};">${initials}</div>
+                        <span class="ns-name">${u.display_name}</span>
+                        <span class="ns-checked-badge">✓ ${userRecord.check_in}</span>
+                    </button>`;
+                }
+
                 return `<button class="ns-user-card" onclick="selectNameCard(this,${u.api_user_id},'${safeName}')">
                     <div class="ns-avatar" style="background:${avatarColor};">${initials}</div>
                     <span class="ns-name">${u.display_name}</span>
