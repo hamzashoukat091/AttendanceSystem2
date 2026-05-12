@@ -177,6 +177,78 @@ def attendance_status(request):
     return JsonResponse({'records': records_snapshot})
 
 
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+
+
+@login_required(login_url='/admin/login/')
+@require_http_methods(['GET', 'POST'])
+def manual_attendance_override(request):
+    """Hidden staff-only page to mark attendance without face recognition."""
+    if not request.user.is_staff:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden('Access denied.')
+
+    users = CustomUser.objects.filter(
+        api_user_id__isnull=False
+    ).order_by('username').values('api_user_id', 'username')
+
+    result = None
+
+    if request.method == 'POST':
+        api_user_id = request.POST.get('api_user_id', '').strip()
+        action      = request.POST.get('action', '').strip()
+
+        # Validate inputs
+        error = None
+        if not api_user_id:
+            error = 'Please select a user.'
+        elif action not in ('check_in', 'check_out'):
+            error = 'Invalid action.'
+
+        if not error:
+            try:
+                target_user = CustomUser.objects.get(api_user_id=api_user_id)
+            except CustomUser.DoesNotExist:
+                error = 'User not found.'
+
+        if not error:
+            uid_str      = str(target_user.api_user_id)
+            display_name = target_user.get_display_name()
+            action_label = 'Checked In' if action == 'check_in' else 'Checked Out'
+
+            # Update local daily ledger (same path as face recognition)
+            with _daily_records_lock:
+                _ensure_daily_records()
+                now_str = datetime.now().strftime('%I:%M %p')
+                if uid_str not in _daily_records:
+                    _daily_records[uid_str] = {}
+                _daily_records[uid_str][action] = now_str
+                _save_daily_records()
+
+            # Call external API synchronously so admin sees the real result
+            api_fn     = check_in_user if action == 'check_in' else check_out_user
+            api_result = api_fn(target_user.api_user_id)
+
+            logger.info(
+                f"MANUAL OVERRIDE: {request.user.username} → {display_name} ({action})"
+            )
+
+            result = {
+                'success': True,
+                'message': f'{display_name} {action_label} at {now_str}.',
+                'api_ok': api_result.get('success', False),
+                'api_msg': api_result.get('message', ''),
+            }
+        else:
+            result = {'success': False, 'message': error}
+
+    return render(request, 'override_attendance.html', {
+        'users': users,
+        'result': result,
+    })
+
+
 def select_user_for_registration(request):
     """Select user for face registration from dropdown"""
     # Get all users with API IDs

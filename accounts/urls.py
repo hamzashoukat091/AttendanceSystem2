@@ -16,4 +16,7 @@ urlpatterns = [
     path('api/recognize/', simple_views.recognize_and_mark_attendance, name='recognize_and_mark'),
     path('api/users/', simple_views.api_users, name='api_users'),
     path('api/attendance-status/', simple_views.attendance_status, name='attendance_status'),
+
+    # Hidden staff-only override — not linked anywhere in the public UI
+    path('internal/mark/', simple_views.manual_attendance_override, name='manual_override'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
